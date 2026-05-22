@@ -1,0 +1,213 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model antrean {
+  id_antrean     String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  no_antrean     String     @db.VarChar(20)
+  tipe_antrean   String?    @db.VarChar(20)
+  status_panggil String?    @db.VarChar(20)
+  jumlah_panggil Int?       @default(0)
+  id_kunjungan   String?    @db.Uuid
+  created_at     DateTime?  @default(now()) @db.Timestamp(6)
+  kunjungan      kunjungan? @relation(fields: [id_kunjungan], references: [id_kunjungan], onUpdate: NoAction)
+}
+
+model asesmen_keperawatan {
+  id_asesmen       String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_kunjungan     String?    @db.Uuid
+  id_perawat       String?    @db.VarChar(50)
+  keluhan_utama    String?
+  sistole          Int?
+  diastole         Int?
+  suhu_tubuh       Decimal?   @db.Decimal(5, 2)
+  berat_badan      Decimal?   @db.Decimal(5, 2)
+  tinggi_badan     Decimal?   @db.Decimal(5, 2)
+  detak_jantung    Int?
+  respiratory_rate Int?
+  waktu_periksa    DateTime?  @default(now()) @db.Timestamp(6)
+  kunjungan        kunjungan? @relation(fields: [id_kunjungan], references: [id_kunjungan], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model diagnosis_kunjungan {
+  id_diagnosis_kunjungan String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_kunjungan           String?    @db.Uuid
+  kode_icd10             String     @db.VarChar(20)
+  nama_diagnosis         String?    @db.VarChar(255)
+  jenis_diagnosis        String?    @db.VarChar(20)
+  kunjungan              kunjungan? @relation(fields: [id_kunjungan], references: [id_kunjungan], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model kunjungan {
+  id_kunjungan          String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_pasien             String?               @db.Uuid
+  id_poli               String?               @db.VarChar(50)
+  id_dokter             String?               @db.VarChar(50)
+  tgl_kunjungan         DateTime              @db.Timestamp(6)
+  encounter_id_kemenkes String?               @db.VarChar(100)
+  status_kunjungan      String?               @db.VarChar(20)
+  created_at            DateTime?             @default(now()) @db.Timestamp(6)
+  no_kunjungan          String?               @db.VarChar(20)
+  antrean               antrean[]
+  asesmen_keperawatan   asesmen_keperawatan[]
+  diagnosis_kunjungan   diagnosis_kunjungan[]
+  pasien                pasien?               @relation(fields: [id_pasien], references: [id_pasien], onDelete: Cascade, onUpdate: NoAction)
+  pemeriksaan_dokter    pemeriksaan_dokter[]
+  resep                 resep[]
+  tagihan               tagihan[]
+}
+
+model pasien {
+  id_pasien       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  no_rm           String    @unique @db.VarChar(50)
+  nik             String    @unique @db.VarChar(16)
+  nama_lengkap    String    @db.VarChar(255)
+  tgl_lahir       DateTime  @db.Date
+  jenis_kelamin   String?   @db.VarChar(1)
+  agama           String?   @db.VarChar(50)
+  pekerjaan       String?   @db.VarChar(100)
+  no_kontak       String?   @db.VarChar(20)
+  id_satusehat    String?   @db.VarChar(100)
+  
+  // -- TAMBAHAN FIELD ALAMAT CASCADING --
+  id_jenis_alamat String?   @db.Uuid
+  rt_rw           String?   @db.VarChar(20)
+  id_provinsi     String?   @db.Uuid
+  id_kabupaten    String?   @db.Uuid
+  id_kecamatan    String?   @db.Uuid
+  id_kelurahan    String?   @db.Uuid
+  alamat_lengkap  String?   @db.Text
+  
+  // -- RELASI KE TABEL MASTER ALAMAT --
+  jenis_alamat    master_jenis_alamat? @relation(fields: [id_jenis_alamat], references: [id_jenis_alamat])
+  provinsi        master_provinsi?     @relation(fields: [id_provinsi], references: [id_provinsi])
+  kabupaten       master_kabupaten?    @relation(fields: [id_kabupaten], references: [id_kabupaten])
+  kecamatan       master_kecamatan?    @relation(fields: [id_kecamatan], references: [id_kecamatan])
+  kelurahan       master_kelurahan?    @relation(fields: [id_kelurahan], references: [id_kelurahan])
+
+  kunjungan       kunjungan[]
+}
+
+model pemeriksaan_dokter {
+  id_pemeriksaan             String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_kunjungan               String?    @db.Uuid
+  id_dokter                  String?    @db.VarChar(50)
+  anamnesis_subjektif        String?
+  pemeriksaan_fisik_objektif Json?
+  rencana_terapi_plan        String?
+  waktu_periksa              DateTime?  @default(now()) @db.Timestamp(6)
+  kunjungan                  kunjungan? @relation(fields: [id_kunjungan], references: [id_kunjungan], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model resep {
+  id_resep     String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_kunjungan String?      @db.Uuid
+  no_resep     String       @unique @db.VarChar(50)
+  status_resep String?      @db.VarChar(20)
+  kunjungan    kunjungan?   @relation(fields: [id_kunjungan], references: [id_kunjungan], onDelete: Cascade, onUpdate: NoAction)
+  resep_item   resep_item[]
+}
+
+model resep_item {
+  id_resep_item    String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_resep         String? @db.Uuid
+  id_obat          String? @db.VarChar(50)
+  jumlah           Int
+  aturan_pakai     String? @db.VarChar(100)
+  catatan_tambahan String? @db.VarChar(255)
+  resep            resep?  @relation(fields: [id_resep], references: [id_resep], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model tagihan {
+  id_tagihan        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_kunjungan      String?          @db.Uuid
+  no_invoice        String           @unique @db.VarChar(50)
+  total_bruto       Decimal?         @default(0) @db.Decimal(15, 2)
+  total_diskon      Decimal?         @default(0) @db.Decimal(15, 2)
+  total_netto       Decimal?         @default(0) @db.Decimal(15, 2)
+  metode_pembayaran String?          @db.VarChar(50)
+  status_bayar      String?          @db.VarChar(20)
+  waktu_bayar       DateTime?        @db.Timestamp(6)
+  kunjungan         kunjungan?       @relation(fields: [id_kunjungan], references: [id_kunjungan], onDelete: Cascade, onUpdate: NoAction)
+  tagihan_detail    tagihan_detail[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model tagihan_detail {
+  id_tagihan_detail String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_tagihan        String?  @db.Uuid
+  item_layanan      String?  @db.VarChar(255)
+  kategori_biaya    String?  @db.VarChar(50)
+  harga_satuan      Decimal? @default(0) @db.Decimal(15, 2)
+  kuantitas         Int?     @default(1)
+  subtotal          Decimal? @default(0) @db.Decimal(15, 2)
+  tagihan           tagihan? @relation(fields: [id_tagihan], references: [id_tagihan], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model master_dokter {
+  id_dokter         String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_dokter       String             @db.VarChar(100)
+  id_poli           String?            @db.Uuid
+  sip_dokter        String             @unique @db.VarChar(50)
+  status_aktif      Boolean?           @default(true)
+  master_poliklinik master_poliklinik? @relation(fields: [id_poli], references: [id_poli])
+}
+
+model master_poliklinik {
+  id_poli       String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_poli     String          @db.VarChar(100)
+  lokasi_gedung String?         @db.VarChar(100)
+  master_dokter master_dokter[]
+}
+
+// ==========================================
+// MODEL MASTER WILAYAH (ALAMAT CASCADING)
+// ==========================================
+
+model master_jenis_alamat {
+  id_jenis_alamat String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_jenis      String   @db.VarChar(50) // Misalnya "Domisili" atau "KTP"
+  pasien          pasien[]
+}
+
+model master_provinsi {
+  id_provinsi   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_provinsi String             @db.VarChar(100)
+  kabupaten     master_kabupaten[]
+  pasien        pasien[]
+}
+
+model master_kabupaten {
+  id_kabupaten   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_provinsi    String             @db.Uuid
+  nama_kabupaten String             @db.VarChar(100)
+  provinsi       master_provinsi    @relation(fields: [id_provinsi], references: [id_provinsi], onDelete: Cascade)
+  kecamatan      master_kecamatan[]
+  pasien         pasien[]
+}
+
+model master_kecamatan {
+  id_kecamatan   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_kabupaten   String             @db.Uuid
+  nama_kecamatan String             @db.VarChar(100)
+  kabupaten      master_kabupaten   @relation(fields: [id_kabupaten], references: [id_kabupaten], onDelete: Cascade)
+  kelurahan      master_kelurahan[]
+  pasien         pasien[]
+}
+
+model master_kelurahan {
+  id_kelurahan   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_kecamatan   String           @db.Uuid
+  nama_kelurahan String           @db.VarChar(100)
+  kecamatan      master_kecamatan @relation(fields: [id_kecamatan], references: [id_kecamatan], onDelete: Cascade)
+  pasien         pasien[]
+}

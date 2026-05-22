@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc; /* Slate-50 background for clean modern aesthetic */
+  --foreground: #0f172a; /* Slate-900 for modern premium reading contrast */
+  --border-premium: rgba(226, 232, 240, 0.7); /* Smooth soft border */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-border: var(--border-premium);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f172a;
+    --foreground: #f8fafc;
+    --border-premium: rgba(51, 65, 85, 0.45);
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), sans-serif;
+}
+
+/* Premium smooth border utilities to override browser and Tailwind preflight defaults */
+.border:not([class*="border-red-"]):not([class*="border-rose-"]):not([class*="border-emerald-"]):not([class*="border-transparent"]),
+.border-t:not([class*="border-red-"]):not([class*="border-rose-"]):not([class*="border-emerald-"]):not([class*="border-transparent"]),
+.border-b:not([class*="border-red-"]):not([class*="border-rose-"]):not([class*="border-emerald-"]):not([class*="border-transparent"]),
+.border-l:not([class*="border-red-"]):not([class*="border-rose-"]):not([class*="border-emerald-"]):not([class*="border-transparent"]),
+.border-r:not([class*="border-red-"]):not([class*="border-rose-"]):not([class*="border-emerald-"]):not([class*="border-transparent"]) {
+  border-color: var(--border-premium) !important;
+}
+
+/* Smooth backdrop blurs and subtle transitions */
+.backdrop-blur-md {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Premium smooth transitions for all interactive elements globally */
+a, button, input, select, textarea {
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Premium micro-interactive scale & bounce lift effects */
+.hover-premium-lift {
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover-premium-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 20px -8px rgba(225, 29, 72, 0.12), 0 8px 12px -6px rgba(0, 0, 0, 0.04);
+}
+
+/* Gorgeous pulsing green light indicator for active live state */
+@keyframes glowing-emerald {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.animate-glow-emerald {
+  animation: glowing-emerald 2s infinite;
+}
+
+

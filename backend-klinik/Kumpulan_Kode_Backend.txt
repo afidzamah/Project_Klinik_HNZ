@@ -1,0 +1,1160 @@
+//D:\develop\Project_Klinik_HNZ\backend-klinik\src\antrean\antrean.service.ts
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class AntreanService {
+  constructor(private prisma: PrismaService) {}
+
+  async create(createAntreanDto: any) {
+    const { tipe_antrean, id_kunjungan } = createAntreanDto;
+
+    // 1. Logika Cerdas: Men-generate Nomor Antrean Otomatis
+    // Ambil tanggal hari ini mulai dari jam 00:00:00
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Hitung sudah ada berapa antrean hari ini dengan tipe yang sama
+    const jumlahAntreanHariIni = await this.prisma.antrean.count({
+      where: {
+        tipe_antrean: tipe_antrean,
+        created_at: {
+          gte: today, // Hitung yang dibuat hari ini saja
+        },
+      },
+    });
+
+    // Buat nomor urut baru (misal: 001, 002, 003)
+    const nomorUrut = (jumlahAntreanHariIni + 1).toString().padStart(3, '0');
+    
+    // Tentukan kode awalan (P = Poli, L = Loket)
+    const kodePrefix = tipe_antrean === 'Poli' ? 'P' : 'L'; 
+    const no_antrean_baru = `${kodePrefix}-${nomorUrut}`;
+
+    // 2. Eksekusi Simpan ke Database PostgreSQL via Prisma
+    const antreanBaru = await this.prisma.antrean.create({
+      data: {
+        no_antrean: no_antrean_baru,
+        tipe_antrean: tipe_antrean,
+        status_panggil: 'Tunggu', // Status default saat baru daftar
+        jumlah_panggil: 0,        // Belum pernah dipanggil
+        id_kunjungan: id_kunjungan,
+      },
+    });
+
+    // Kembalikan data antrean baru ke frontend agar layar langsung update
+    return antreanBaru;
+  }
+  async update(id_antrean: string, updateAntreanDto: any) {
+    return this.prisma.antrean.update({
+      where: { id_antrean }, // Mengunci data berdasarkan ID UUID antrean
+      data: {
+        status_panggil: updateAntreanDto.status_panggil,
+        // Otomatis naikkan jumlah panggil setiap kali tombol diklik
+        jumlah_panggil: updateAntreanDto.status_panggil === 'Panggil' ? { increment: 1 } : undefined
+      },
+    });
+  }
+
+  // Sekarang orderBy created_at dijamin 100% aman dan bebas eror validation
+  async findAll() {
+    return this.prisma.antrean.findMany({
+      include: {
+        kunjungan: {
+          include: {
+            pasien: true,
+            asesmen_keperawatan: true,
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'asc',
+      },
+    });
+  }
+}	
+//D:\develop\Project_Klinik_HNZ\backend-klinik\src\antrean\antrean.controller.ts
+import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+  import { AntreanService } from './antrean.service';
+  import { ApiTags } from '@nestjs/swagger';
+
+  @ApiTags('Queue Management')
+  @Controller('antrean')
+  export class AntreanController {
+    constructor(private readonly antreanService: AntreanService) {}
+
+    @Post()
+    create(@Body() createAntreanDto: any) {
+      return this.antreanService.create(createAntreanDto);
+    }
+
+    @Get()
+    findAll() {
+      return this.antreanService.findAll();
+    }
+
+    @Patch(':id')
+    update(@Param('id') id: string, @Body() updateAntreanDto: any) {
+      return this.antreanService.update(id, updateAntreanDto);
+    }
+  }
+//D:\develop\Project_Klinik_HNZ\backend-klinik\src\asesmen-keperawatan\asesmen-keperawatan.service.ts
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class AsesmenKeperawatanService {
+  constructor(private prisma: PrismaService) {}
+
+  // 1. Fungsi Perawat Menginput Asesmen Awal
+  async create(createAsesmenDto: any) {
+    // Memastikan data kunjungan pasien tersebut benar-benar ada
+    const kunjungan = await this.prisma.kunjungan.findUnique({
+      where: { id_kunjungan: createAsesmenDto.id_kunjungan },
+    });
+
+    if (!kunjungan) {
+      throw new NotFoundException('Data kunjungan tidak ditemukan!');
+    }
+
+    // Menyimpan data asesmen TTV ke database
+    return this.prisma.asesmen_keperawatan.create({
+      data: {
+        id_kunjungan: createAsesmenDto.id_kunjungan,
+        // id_perawat: createAsesmenDto.id_perawat, // (Bisa diaktifkan jika tabel master perawat sudah ada)
+        keluhan_utama: createAsesmenDto.keluhan_utama,
+        sistole: createAsesmenDto.sistole,
+        diastole: createAsesmenDto.diastole,
+        suhu_tubuh: createAsesmenDto.suhu_tubuh,
+        berat_badan: createAsesmenDto.berat_badan,
+        tinggi_badan: createAsesmenDto.tinggi_badan,
+        detak_jantung: createAsesmenDto.detak_jantung,
+        respiratory_rate: createAsesmenDto.respiratory_rate,
+        waktu_periksa: new Date(),
+      },
+    });
+  }
+
+  // 2. Fungsi Melihat Daftar Asesmen (Beserta Data Kunjungannya)
+  async findAll() {
+    return this.prisma.asesmen_keperawatan.findMany({
+      include: {
+        kunjungan: true, 
+      },
+    });
+  }
+}
+//D:\develop\Project_Klinik_HNZ\backend-klinik\src\asesmen-keperawatan\asesmen-keperawatan.controller.ts
+import { Controller, Get, Post, Body } from '@nestjs/common';
+import { AsesmenKeperawatanService } from './asesmen-keperawatan.service';
+import { ApiTags, ApiOperation } from '@nestjs/swagger'; 
+import { CreateAsesmenKeperawatanDto } from './dto/create-asesmen-keperawatan.dto'; // Import DTO
+
+@ApiTags('Nurse Station (Triage)')
+@Controller('asesmen-keperawatan')
+export class AsesmenKeperawatanController {
+  constructor(private readonly asesmenKeperawatanService: AsesmenKeperawatanService) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Input Data TTV & Keluhan Pasien' })
+  // Kita ganti tipe 'any' menjadi nama DTO kita. Swagger akan otomatis membacanya!
+  create(@Body() createAsesmenDto: CreateAsesmenKeperawatanDto) {
+    return this.asesmenKeperawatanService.create(createAsesmenDto);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Lihat Seluruh Data Asesmen Keperawatan' })
+  findAll() {
+    return this.asesmenKeperawatanService.findAll();
+  }
+}
+//D:\develop\Project_Klinik_HNZ\backend-klinik\src\kunjungan\kunjungan.service.ts
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class KunjunganService {
+  constructor(private prisma: PrismaService) {}
+
+  async create(createKunjunganDto: any) {
+    // 1. Ambil batasan waktu hari ini (00:00:00 sampai 23:59:59)
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    // 2. Hitung berapa jumlah kunjungan yang sudah tersimpan HARI INI
+    const countToday = await this.prisma.kunjungan.count({
+      where: {
+        created_at: {
+          gte: startOfToday,
+          lte: endOfToday,
+        },
+      },
+    });
+
+    // 3. Ambil data tanggal saat ini untuk komponen YY, MM, DD
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(-2); // Mengambil 2 digit terakhir tahun (cth: 26)
+    const mm = String(now.getMonth() + 1).padStart(2, '0'); // Bulan berformat 2 digit (cth: 05)
+    const dd = String(now.getDate()).padStart(2, '0'); // Tanggal berformat 2 digit (cth: 18)
+    
+    // 4. Buat 4 digit sequence otomatis yang naik 1 angka (cth: 0001, 0002)
+    const xxxx = String(countToday + 1).padStart(4, '0');
+
+    // 5. Gabungkan menjadi format YYMMDDXXXX
+    const no_kunjungan = `${yy}${mm}${dd}${xxxx}`;
+
+    // 6. Simpan transaksi ke database bersama nomor kunjungan baru
+    return this.prisma.kunjungan.create({
+      data: {
+        ...createKunjunganDto,
+        no_kunjungan: no_kunjungan,
+      },
+    });
+  }
+
+  // Fungsi lainnya tetap dibiarkan utuh aman
+  async findAll() {
+    return this.prisma.kunjungan.findMany({
+      include: { pasien: true },
+    });
+  }
+
+  async findOne(id: string) {
+    return this.prisma.kunjungan.findUnique({
+      where: { id_kunjungan: id },
+      include: { pasien: true },
+    });
+  }
+
+  async findTracking() {
+    return this.prisma.kunjungan.findMany({
+      include: {
+        pasien: true,
+        antrean: true,
+        asesmen_keperawatan: true,
+        pemeriksaan_dokter: true,
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+  }
+}
+//D:\develop\Project_Klinik_HNZ\backend-klinik\src\kunjungan\kunjungan.controller.ts
+import { Controller, Get, Post, Body, Param, Patch, Delete } from '@nestjs/common';
+import { KunjunganService } from './kunjungan.service';
+import { ApiTags } from '@nestjs/swagger';
+
+@ApiTags('Kunjungan Pasien')
+@Controller('kunjungan')
+export class KunjunganController {
+  constructor(private readonly kunjunganService: KunjunganService) {}
+
+  @Post()
+  create(@Body() createKunjunganDto: any) {
+    return this.kunjunganService.create(createKunjunganDto);
+  }
+
+  // 🌟 JALUR BENAR: Rute 'tracking' HARUS ditulis LEBIH DULU daripada ':id'
+  @Get('tracking')
+  async dapatkanTrackingPasien() {
+    return this.kunjunganService.findTracking();
+  }
+
+  @Get()
+  findAll() {
+    return this.kunjunganService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.kunjunganService.findOne(id);
+  }
+}
+D:\develop\Project_Klinik_HNZ\backend-klinik\src\master-dokter\master-dokter.service.ts
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class MasterDokterService {
+  constructor(private prisma: PrismaService) {}
+
+  findAll() {
+    return this.prisma.master_dokter.findMany({
+      where: { status_aktif: true },
+    });
+  }
+}
+//D:\develop\Project_Klinik_HNZ\backend-klinik\src\master-dokter\master-dokter.controller.ts
+import { Controller, Get } from '@nestjs/common';
+import { MasterDokterService } from './master-dokter.service';
+
+@Controller('master-dokter')
+export class MasterDokterController {
+  constructor(private readonly dokterService: MasterDokterService) {}
+
+  @Get()
+  findAll() {
+    return this.dokterService.findAll();
+  }
+}
+//D:\develop\Project_Klinik_HNZ\backend-klinik\src\master-jenis-alamat\master-jenis-alamat.service.ts
+import { Injectable } from '@nestjs/common';
+import { CreateMasterJenisAlamatDto } from './dto/create-master-jenis-alamat.dto';
+import { UpdateMasterJenisAlamatDto } from './dto/update-master-jenis-alamat.dto';
+
+@Injectable()
+export class MasterJenisAlamatService {
+  create(createMasterJenisAlamatDto: CreateMasterJenisAlamatDto) {
+    return 'This action adds a new masterJenisAlamat';
+  }
+
+  findAll() {
+    return `This action returns all masterJenisAlamat`;
+  }
+
+  findOne(id: number) {
+    return `This action returns a #${id} masterJenisAlamat`;
+  }
+
+  update(id: number, updateMasterJenisAlamatDto: UpdateMasterJenisAlamatDto) {
+    return `This action updates a #${id} masterJenisAlamat`;
+  }
+
+  remove(id: number) {
+    return `This action removes a #${id} masterJenisAlamat`;
+  }
+}
+//src\master-jenis-alamat\master-jenis-alamat.controller.ts
+import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { MasterJenisAlamatService } from './master-jenis-alamat.service';
+import { CreateMasterJenisAlamatDto } from './dto/create-master-jenis-alamat.dto';
+import { UpdateMasterJenisAlamatDto } from './dto/update-master-jenis-alamat.dto';
+
+@Controller('master-jenis-alamat')
+export class MasterJenisAlamatController {
+  constructor(private readonly masterJenisAlamatService: MasterJenisAlamatService) {}
+
+  @Post()
+  create(@Body() createMasterJenisAlamatDto: CreateMasterJenisAlamatDto) {
+    return this.masterJenisAlamatService.create(createMasterJenisAlamatDto);
+  }
+
+  @Get()
+  findAll() {
+    return this.masterJenisAlamatService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.masterJenisAlamatService.findOne(+id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateMasterJenisAlamatDto: UpdateMasterJenisAlamatDto) {
+    return this.masterJenisAlamatService.update(+id, updateMasterJenisAlamatDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.masterJenisAlamatService.remove(+id);
+  }
+}
+//src\master-kabupaten\master-kabupaten.service.ts
+import { Injectable } from '@nestjs/common';
+import { CreateMasterKabupatenDto } from './dto/create-master-kabupaten.dto';
+import { UpdateMasterKabupatenDto } from './dto/update-master-kabupaten.dto';
+
+@Injectable()
+export class MasterKabupatenService {
+  create(createMasterKabupatenDto: CreateMasterKabupatenDto) {
+    return 'This action adds a new masterKabupaten';
+  }
+
+  findAll() {
+    return `This action returns all masterKabupaten`;
+  }
+
+  findOne(id: number) {
+    return `This action returns a #${id} masterKabupaten`;
+  }
+
+  update(id: number, updateMasterKabupatenDto: UpdateMasterKabupatenDto) {
+    return `This action updates a #${id} masterKabupaten`;
+  }
+
+  remove(id: number) {
+    return `This action removes a #${id} masterKabupaten`;
+  }
+}
+//src\master-kabupaten\master-kabupaten.controller.ts
+import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { MasterKabupatenService } from './master-kabupaten.service';
+import { CreateMasterKabupatenDto } from './dto/create-master-kabupaten.dto';
+import { UpdateMasterKabupatenDto } from './dto/update-master-kabupaten.dto';
+
+@Controller('master-kabupaten')
+export class MasterKabupatenController {
+  constructor(private readonly masterKabupatenService: MasterKabupatenService) {}
+
+  @Post()
+  create(@Body() createMasterKabupatenDto: CreateMasterKabupatenDto) {
+    return this.masterKabupatenService.create(createMasterKabupatenDto);
+  }
+
+  @Get()
+  findAll() {
+    return this.masterKabupatenService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.masterKabupatenService.findOne(+id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateMasterKabupatenDto: UpdateMasterKabupatenDto) {
+    return this.masterKabupatenService.update(+id, updateMasterKabupatenDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.masterKabupatenService.remove(+id);
+  }
+}
+//src\master-kecamatan\master-kecamatan.service.ts
+import { Injectable } from '@nestjs/common';
+import { CreateMasterKecamatanDto } from './dto/create-master-kecamatan.dto';
+import { UpdateMasterKecamatanDto } from './dto/update-master-kecamatan.dto';
+
+@Injectable()
+export class MasterKecamatanService {
+  create(createMasterKecamatanDto: CreateMasterKecamatanDto) {
+    return 'This action adds a new masterKecamatan';
+  }
+
+  findAll() {
+    return `This action returns all masterKecamatan`;
+  }
+
+  findOne(id: number) {
+    return `This action returns a #${id} masterKecamatan`;
+  }
+
+  update(id: number, updateMasterKecamatanDto: UpdateMasterKecamatanDto) {
+    return `This action updates a #${id} masterKecamatan`;
+  }
+
+  remove(id: number) {
+    return `This action removes a #${id} masterKecamatan`;
+  }
+}
+//src\master-kecamatan\master-kecamatan.controller.ts
+import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { MasterKecamatanService } from './master-kecamatan.service';
+import { CreateMasterKecamatanDto } from './dto/create-master-kecamatan.dto';
+import { UpdateMasterKecamatanDto } from './dto/update-master-kecamatan.dto';
+
+@Controller('master-kecamatan')
+export class MasterKecamatanController {
+  constructor(private readonly masterKecamatanService: MasterKecamatanService) {}
+
+  @Post()
+  create(@Body() createMasterKecamatanDto: CreateMasterKecamatanDto) {
+    return this.masterKecamatanService.create(createMasterKecamatanDto);
+  }
+
+  @Get()
+  findAll() {
+    return this.masterKecamatanService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.masterKecamatanService.findOne(+id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateMasterKecamatanDto: UpdateMasterKecamatanDto) {
+    return this.masterKecamatanService.update(+id, updateMasterKecamatanDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.masterKecamatanService.remove(+id);
+  }
+}
+//src\master-kelurahan\master-kelurahan.service.ts
+import { Injectable } from '@nestjs/common';
+import { CreateMasterKelurahanDto } from './dto/create-master-kelurahan.dto';
+import { UpdateMasterKelurahanDto } from './dto/update-master-kelurahan.dto';
+
+@Injectable()
+export class MasterKelurahanService {
+  create(createMasterKelurahanDto: CreateMasterKelurahanDto) {
+    return 'This action adds a new masterKelurahan';
+  }
+
+  findAll() {
+    return `This action returns all masterKelurahan`;
+  }
+
+  findOne(id: number) {
+    return `This action returns a #${id} masterKelurahan`;
+  }
+
+  update(id: number, updateMasterKelurahanDto: UpdateMasterKelurahanDto) {
+    return `This action updates a #${id} masterKelurahan`;
+  }
+
+  remove(id: number) {
+    return `This action removes a #${id} masterKelurahan`;
+  }
+}
+//src\master-kelurahan\master-kelurahan.controller.ts
+import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { MasterKelurahanService } from './master-kelurahan.service';
+import { CreateMasterKelurahanDto } from './dto/create-master-kelurahan.dto';
+import { UpdateMasterKelurahanDto } from './dto/update-master-kelurahan.dto';
+
+@Controller('master-kelurahan')
+export class MasterKelurahanController {
+  constructor(private readonly masterKelurahanService: MasterKelurahanService) {}
+
+  @Post()
+  create(@Body() createMasterKelurahanDto: CreateMasterKelurahanDto) {
+    return this.masterKelurahanService.create(createMasterKelurahanDto);
+  }
+
+  @Get()
+  findAll() {
+    return this.masterKelurahanService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.masterKelurahanService.findOne(+id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateMasterKelurahanDto: UpdateMasterKelurahanDto) {
+    return this.masterKelurahanService.update(+id, updateMasterKelurahanDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.masterKelurahanService.remove(+id);
+  }
+}
+//src\master-poliklinik\master-poliklinik.service.ts
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class MasterPoliklinikService {
+  constructor(private prisma: PrismaService) {}
+
+  findAll() {
+    return this.prisma.master_poliklinik.findMany({
+      orderBy: { nama_poli: 'asc' },
+    });
+  }
+}
+//src\master-poliklinik\master-poliklinik.controller.ts
+import { Controller, Get } from '@nestjs/common';
+import { MasterPoliklinikService } from './master-poliklinik.service';
+
+@Controller('master-poliklinik')
+export class MasterPoliklinikController {
+  constructor(private readonly poliklinikService: MasterPoliklinikService) {}
+
+  @Get()
+  findAll() {
+    return this.poliklinikService.findAll();
+  }
+}
+//src\master-provinsi\master-provinsi.service.ts
+import { Injectable } from '@nestjs/common';
+import { CreateMasterProvinsiDto } from './dto/create-master-provinsi.dto';
+import { UpdateMasterProvinsiDto } from './dto/update-master-provinsi.dto';
+
+@Injectable()
+export class MasterProvinsiService {
+  create(createMasterProvinsiDto: CreateMasterProvinsiDto) {
+    return 'This action adds a new masterProvinsi';
+  }
+
+  findAll() {
+    return `This action returns all masterProvinsi`;
+  }
+
+  findOne(id: number) {
+    return `This action returns a #${id} masterProvinsi`;
+  }
+
+  update(id: number, updateMasterProvinsiDto: UpdateMasterProvinsiDto) {
+    return `This action updates a #${id} masterProvinsi`;
+  }
+
+  remove(id: number) {
+    return `This action removes a #${id} masterProvinsi`;
+  }
+}
+//src\master-provinsi\master-provinsi.controller.ts
+import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { MasterProvinsiService } from './master-provinsi.service';
+import { CreateMasterProvinsiDto } from './dto/create-master-provinsi.dto';
+import { UpdateMasterProvinsiDto } from './dto/update-master-provinsi.dto';
+
+@Controller('master-provinsi')
+export class MasterProvinsiController {
+  constructor(private readonly masterProvinsiService: MasterProvinsiService) {}
+
+  @Post()
+  create(@Body() createMasterProvinsiDto: CreateMasterProvinsiDto) {
+    return this.masterProvinsiService.create(createMasterProvinsiDto);
+  }
+
+  @Get()
+  findAll() {
+    return this.masterProvinsiService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.masterProvinsiService.findOne(+id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateMasterProvinsiDto: UpdateMasterProvinsiDto) {
+    return this.masterProvinsiService.update(+id, updateMasterProvinsiDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.masterProvinsiService.remove(+id);
+  }
+}
+//src\pasien\pasien.service.ts
+import { Injectable, ConflictException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class PasienService {
+  // Memanggil database dari PrismaService
+  constructor(private prisma: PrismaService) {}
+
+  // 1. Fungsi untuk mendaftarkan pasien baru
+  async create(createPasienDto: any) {
+    // Mengecek apakah NIK sudah pernah didaftarkan sebelumnya
+    const pasienExist = await this.prisma.pasien.findUnique({
+      where: { nik: createPasienDto.nik },
+    });
+
+    if (pasienExist) {
+      throw new ConflictException('Pasien dengan NIK tersebut sudah terdaftar di Klinik HNZ!');
+    }
+
+    // Membuat Nomor Rekam Medis (RM) otomatis (contoh: RM-HNZ-0001)
+    const totalPasien = await this.prisma.pasien.count();
+    const noRmOtomatis = `RM-HNZ-${String(totalPasien + 1).padStart(4, '0')}`;
+
+    // Memasukkan data ke tabel Pasien
+    return this.prisma.pasien.create({
+      data: {
+        no_rm: noRmOtomatis,
+        nik: createPasienDto.nik,
+        nama_lengkap: createPasienDto.nama_lengkap,
+        tgl_lahir: new Date(createPasienDto.tgl_lahir), // Memastikan format tanggal valid
+        jenis_kelamin: createPasienDto.jenis_kelamin,
+        agama: createPasienDto.agama,
+        pekerjaan: createPasienDto.pekerjaan,
+        no_kontak: createPasienDto.no_kontak,
+      },
+    });
+  }
+
+  // 2. Fungsi untuk melihat seluruh data pasien
+  async findAll() {
+    return this.prisma.pasien.findMany();
+  }
+}
+//src\pasien\pasien.controller.ts
+import { Controller, Get, Post, Body } from '@nestjs/common';
+import { PasienService } from './pasien.service';
+
+@Controller('pasien')
+export class PasienController {
+  constructor(private readonly pasienService: PasienService) {}
+
+  @Post() // Jalur untuk mengirim/menyimpan data
+  create(@Body() createPasienDto: any) {
+    return this.pasienService.create(createPasienDto);
+  }
+
+  @Get() // Jalur untuk mengambil/melihat data
+  findAll() {
+    return this.pasienService.findAll();
+  }
+}
+//src\pemeriksaan-dokter\pemeriksaan-dokter.service.ts
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { GoogleGenAI } from '@google/genai';
+
+@Injectable()
+export class PemeriksaanDokterService {
+  private ai: GoogleGenAI;
+
+  constructor(private prisma: PrismaService) {
+    // 🔍 DIAGNOSTIK 1: Cek apakah NestJS benar-benar bisa membaca file .env kamu
+    console.log("🔑 KUNCI API DI .env YANG TERBACA NESTJS:", process.env.GEMINI_API_KEY);
+
+    const cleanApiKey = (process.env.GEMINI_API_KEY || '').replace(/['"]/g, '').trim();
+    this.ai = new GoogleGenAI({ apiKey: cleanApiKey });
+  }
+
+  async analisisDiagnosaAI(id_kunjungan: string, anamnesis_subjektif: string) {
+    const asesmenPerawat = await this.prisma.asesmen_keperawatan.findFirst({
+      where: { id_kunjungan },
+      orderBy: { id_asesmen: 'desc' },
+    });
+
+    const keluhanAwal = asesmenPerawat?.keluhan_utama || 'Tidak ada catatan keluhan awal';
+    const tensi = asesmenPerawat ? `${asesmenPerawat.sistole}/${asesmenPerawat.diastole} mmHg` : 'Tidak diperiksa';
+    const suhu = asesmenPerawat ? `${asesmenPerawat.suhu_tubuh} °C` : 'Tidak diperiksa';
+    const bb = asesmenPerawat ? `${asesmenPerawat.berat_badan} kg` : 'Tidak diperiksa';
+
+    const promptMedis = `
+      Anda adalah Sistem Pendukung Keputusan Klinis (CDSS) AI Internasional untuk Klinik Utama HNZ.
+      Tugas Anda adalah memberikan rekomendasi diagnosis banding sementara berdasarkan data klinis pasien berikut.
+      
+      DATA KLINIS KEPERAWATAN:
+      - Keluhan Awal Perawat: ${keluhanAwal}
+      - Tanda Vital (TTV): Tensi: ${tensi}, Suhu: ${suhu}, Berat Badan: ${bb}
+      
+      ANAMNESIS SUBJEKTIF DOKTER:
+      - Hasil Wawancara Dokter: ${anamnesis_subjektif}
+      
+      ATURAN OUTPUT:
+      Wajib merespons HANYA dalam format JSON bersih tanpa markdown (\`\`\`), tanpa teks pembuka/penutup. Struktur JSON harus persis seperti ini:
+      {
+        "diagnosa_utama": "Nama Penyakit Utama Bahasa Indonesia",
+        "icd10_utama": "Kode ICD-10",
+        "diagnosa_banding": [
+          { "penyakit": "Nama Penyakit Banding 1", "icd10": "Kode ICD-10", "probabilitas": "Persentase%" }
+        ],
+        "rekomendasi_tindakan": "Rencana terapi/pemeriksaan penunjang singkat",
+        "edukasi_pasien": "Saran perawatan di rumah untuk pasien"
+      }
+    `;
+
+    try {
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: promptMedis,
+      });
+
+      const rawText = response.text || '';
+      const cleanJsonText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(cleanJsonText);
+    } catch (error) {
+      // 🔍 DIAGNOSTIK 2: Cetak eror asli dari Google ke terminal backend
+      console.error("🔴 EROR NYATA DI TRY-CATCH GEMINI:", error);
+
+      return {
+        diagnosa_utama: "Gagal memproses diagnosis AI",
+        icd10_utama: "-",
+        diagnosa_banding: [],
+        rekomendasi_tindakan: "Silakan lakukan diagnosis manual, koneksi API terganggu.",
+        edukasi_pasien: "-"
+      };
+    }
+  }
+
+  async create(createDto: any) {
+    return this.prisma.pemeriksaan_dokter.create({
+      data: createDto,
+    });
+  }
+
+  async findAll() {
+    return this.prisma.pemeriksaan_dokter.findMany({
+      include: {
+        kunjungan: {
+          include: {
+            pasien: true
+          }
+        }
+      }
+    });
+  }
+}
+//src\pemeriksaan-dokter\pemeriksaan-dokter.controller.ts
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { PemeriksaanDokterService } from './pemeriksaan-dokter.service';
+import { ApiTags } from '@nestjs/swagger';
+
+@ApiTags('Doctor Examination (SOAP)')
+@Controller('pemeriksaan-dokter')
+export class PemeriksaanDokterController {
+  constructor(private readonly pemeriksaanDokterService: PemeriksaanDokterService) {}
+
+  @Post()
+  create(@Body() createDto: any) {
+    return this.pemeriksaanDokterService.create(createDto);
+  }
+
+  @Post('analisis-ai')
+  async dapatkanAnalisisAI(@Body() body: { id_kunjungan: string; anamnesis_subjektif: string }) {
+    return this.pemeriksaanDokterService.analisisDiagnosaAI(body.id_kunjungan, body.anamnesis_subjektif);
+  }
+
+  @Get()
+  findAll() {
+    // Sekarang baris ini dijamin aman karena fungsinya sudah kita buat di atas!
+    return this.pemeriksaanDokterService.findAll();
+  }
+}
+//src\prisma\prisma.service.ts
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+
+@Injectable()
+export class PrismaService extends PrismaClient implements OnModuleInit {
+  constructor() {
+    // Aturan baru Prisma 7: Wajib menggunakan adapter untuk koneksi database
+    const connectionString = 'postgresql://postgres:postgres@localhost:5432/klinik_hnz?schema=public';
+    const pool = new Pool({ connectionString });
+    const adapter = new PrismaPg(pool);
+    
+    super({ adapter });
+  }
+
+  async onModuleInit() {
+    await this.$connect();
+  }
+}
+//src\resep\resep.service.ts
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateResepDto } from './dto/create-resep.dto';
+
+@Injectable()
+export class ResepService {
+  constructor(private prisma: PrismaService) {}
+
+  // 1. Fungsi Dokter Mengirim Resep ke Apotek
+  async create(createResepDto: CreateResepDto) {
+    // Memastikan kunjungannya valid
+    const kunjungan = await this.prisma.kunjungan.findUnique({
+      where: { id_kunjungan: createResepDto.id_kunjungan },
+    });
+
+    if (!kunjungan) {
+      throw new NotFoundException('Data kunjungan tidak ditemukan!');
+    }
+
+    // Membuat nomor resep otomatis (Contoh: R-HNZ-0001)
+    const totalResep = await this.prisma.resep.count();
+    const noResepOtomatis = `R-HNZ-${String(totalResep + 1).padStart(4, '0')}`;
+
+    // AJAIB: Menyimpan ke tabel Resep (Header) sekaligus ke tabel Resep_Item (Detail)
+    return this.prisma.resep.create({
+      data: {
+        id_kunjungan: createResepDto.id_kunjungan,
+        no_resep: noResepOtomatis,
+        status_resep: 'Terkirim', // Status awal masuk ke apotek
+        
+        // Memasukkan daftar obatnya ke tabel Resep_Item
+        resep_item: {
+          create: createResepDto.items.map((item) => ({
+            id_obat: item.id_obat,
+            jumlah: item.jumlah,
+            aturan_pakai: item.aturan_pakai,
+            catatan_tambahan: item.catatan_tambahan,
+          })),
+        },
+      },
+      // Menginstruksikan Prisma untuk mengembalikan data lengkap beserta isi obatnya
+      include: {
+        resep_item: true, 
+      },
+    });
+  }
+
+  // 2. Fungsi Apoteker Melihat Daftar Resep yang Masuk
+  async findAll() {
+    return this.prisma.resep.findMany({
+      include: {
+        kunjungan: { include: { pasien: true } }, // Relasi ke Data Pasien
+        resep_item: true, // Relasi ke Detail Obat
+      },
+      orderBy: {
+        id_resep: 'desc', // Mengurutkan dari resep terbaru
+      }
+    });
+  }
+}
+//src\resep\resep.controller.ts
+import { Controller, Get, Post, Body } from '@nestjs/common';
+import { ResepService } from './resep.service';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { CreateResepDto } from './dto/create-resep.dto';
+
+@ApiTags('Farmasi / Apotek (E-Prescribing)')
+@Controller('resep')
+export class ResepController {
+  constructor(private readonly resepService: ResepService) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Dokter: Kirim Resep ke Apotek' })
+  create(@Body() createResepDto: CreateResepDto) {
+    return this.resepService.create(createResepDto);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Apoteker: Lihat Daftar Resep Masuk' })
+  findAll() {
+    return this.resepService.findAll();
+  }
+}
+//src\tagihan\tagihan.service.ts
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateTagihanDto } from './dto/create-tagihan.dto';
+
+@Injectable()
+export class TagihanService {
+  constructor(private prisma: PrismaService) {}
+
+  // 1. Fungsi Kasir Membuat Tagihan Akhir
+  async create(createTagihanDto: CreateTagihanDto) {
+    // Memastikan kunjungannya valid
+    const kunjungan = await this.prisma.kunjungan.findUnique({
+      where: { id_kunjungan: createTagihanDto.id_kunjungan },
+    });
+
+    if (!kunjungan) {
+      throw new NotFoundException('Data kunjungan tidak ditemukan!');
+    }
+
+    // Membuat nomor invoice otomatis (Contoh: INV-HNZ-0001)
+    const totalTagihan = await this.prisma.tagihan.count();
+    const noInvoiceOtomatis = `INV-HNZ-${String(totalTagihan + 1).padStart(4, '0')}`;
+
+    // AJAIB: Menyimpan ke tabel Tagihan (Header) sekaligus ke tabel Tagihan_Detail
+    const tagihanBaru = await this.prisma.tagihan.create({
+      data: {
+        id_kunjungan: createTagihanDto.id_kunjungan,
+        no_invoice: noInvoiceOtomatis,
+        total_bruto: createTagihanDto.total_bruto,
+        total_diskon: createTagihanDto.total_diskon,
+        total_netto: createTagihanDto.total_netto,
+        metode_pembayaran: createTagihanDto.metode_pembayaran,
+        status_bayar: 'Lunas', // Otomatis lunas saat diinput
+        waktu_bayar: new Date(),
+        
+        // Memasukkan rincian biayanya ke tabel Tagihan_Detail
+        tagihan_detail: {
+          create: createTagihanDto.items.map((item) => ({
+            item_layanan: item.item_layanan,
+            kategori_biaya: item.kategori_biaya,
+            harga_satuan: item.harga_satuan,
+            kuantitas: item.kuantitas,
+            subtotal: item.subtotal,
+          })),
+        },
+      },
+      include: {
+        tagihan_detail: true, 
+      },
+    });
+
+    // Otomatis mengubah status Kunjungan menjadi "Selesai" setelah dibayar
+    await this.prisma.kunjungan.update({
+      where: { id_kunjungan: createTagihanDto.id_kunjungan },
+      data: { status_kunjungan: 'Selesai' },
+    });
+
+    return tagihanBaru;
+  }
+
+  // 2. Fungsi Melihat Daftar Transaksi Kasir
+  async findAll() {
+    return this.prisma.tagihan.findMany({
+      include: {
+        kunjungan: { include: { pasien: true } }, 
+        tagihan_detail: true, 
+      },
+      orderBy: {
+        id_tagihan: 'desc', 
+      }
+    });
+  }
+}
+//src\tagihan\tagihan.controller.ts
+import { Controller, Get, Post, Body } from '@nestjs/common';
+import { TagihanService } from './tagihan.service';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { CreateTagihanDto } from './dto/create-tagihan.dto';
+
+@ApiTags('Kasir / Billing')
+@Controller('tagihan')
+export class TagihanController {
+  constructor(private readonly tagihanService: TagihanService) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Kasir: Buat Invoice & Terima Pembayaran' })
+  create(@Body() createTagihanDto: CreateTagihanDto) {
+    return this.tagihanService.create(createTagihanDto);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Lihat Seluruh Riwayat Transaksi' })
+  findAll() {
+    return this.tagihanService.findAll();
+  }
+}
+//src\main.ts
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
+import * as dotenv from 'dotenv';
+
+// Jalankan loading .env sebelum NestJS merakit komponen
+dotenv.config();
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  // TAMBAHKAN BARIS INI: Mengizinkan Next.js mengirim data ke NestJS
+  app.enableCors();
+
+  // Konfigurasi Header Swagger
+  const config = new DocumentBuilder()
+    .setTitle('API Klinik Utama HNZ')
+    .setDescription('Dokumentasi lengkap API sistem Hospital Information System (HIS) Klinik HNZ')
+    .setVersion('1.0')
+    .addTag('Pendaftaran') // Kamu bisa menambahkan tag untuk merapikan modul
+    .build();
+  
+  // Mencetak layar Swagger
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
+
+  await app.listen(3000);
+}
+bootstrap();
+//src\master-wilayah\master-wilayah.service.ts
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class MasterWilayahService {
+  constructor(private prisma: PrismaService) {}
+
+  async getJenisAlamat() {
+    return this.prisma.master_jenis_alamat.findMany();
+  }
+
+  async getProvinsi() {
+    return this.prisma.master_provinsi.findMany({
+      orderBy: { nama_provinsi: 'asc' }, // Urutkan abjad A-Z
+    });
+  }
+
+  async getKabupaten(id_provinsi: string) {
+    return this.prisma.master_kabupaten.findMany({
+      where: { id_provinsi: id_provinsi },
+      orderBy: { nama_kabupaten: 'asc' },
+    });
+  }
+
+  async getKecamatan(id_kabupaten: string) {
+    return this.prisma.master_kecamatan.findMany({
+      where: { id_kabupaten: id_kabupaten },
+      orderBy: { nama_kecamatan: 'asc' },
+    });
+  }
+
+  async getKelurahan(id_kecamatan: string) {
+    return this.prisma.master_kelurahan.findMany({
+      where: { id_kecamatan: id_kecamatan },
+      orderBy: { nama_kelurahan: 'asc' },
+    });
+  }
+}
+//src\master-wilayah\master-wilayah.controller.ts
+import { Controller, Get, Param } from '@nestjs/common';
+import { MasterWilayahService } from './master-wilayah.service';
+import { ApiTags } from '@nestjs/swagger';
+
+@ApiTags('Master Wilayah (Cascading)')
+@Controller('master-wilayah') // Sama persis dengan URL fetch di frontend
+export class MasterWilayahController {
+  constructor(private readonly masterWilayahService: MasterWilayahService) {}
+
+  @Get('jenis-alamat')
+  getJenisAlamat() {
+    return this.masterWilayahService.getJenisAlamat();
+  }
+
+  @Get('provinsi')
+  getProvinsi() {
+    return this.masterWilayahService.getProvinsi();
+  }
+
+  @Get('kabupaten/:id_provinsi')
+  getKabupaten(@Param('id_provinsi') id_provinsi: string) {
+    return this.masterWilayahService.getKabupaten(id_provinsi);
+  }
+
+  @Get('kecamatan/:id_kabupaten')
+  getKecamatan(@Param('id_kabupaten') id_kabupaten: string) {
+    return this.masterWilayahService.getKecamatan(id_kabupaten);
+  }
+
+  @Get('kelurahan/:id_kecamatan')
+  getKelurahan(@Param('id_kecamatan') id_kecamatan: string) {
+    return this.masterWilayahService.getKelurahan(id_kecamatan);
+  }
+}
+
+//src\app.module.ts
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { PrismaModule } from './prisma/prisma.module';
+import { PasienModule } from './pasien/pasien.module';
+import { KunjunganModule } from './kunjungan/kunjungan.module';
+import { AntreanModule } from './antrean/antrean.module';
+import { AsesmenKeperawatanModule } from './asesmen-keperawatan/asesmen-keperawatan.module';
+import { PemeriksaanDokterModule } from './pemeriksaan-dokter/pemeriksaan-dokter.module';
+import { ResepModule } from './resep/resep.module';
+import { TagihanModule } from './tagihan/tagihan.module';
+import { MasterDokterModule } from './master-dokter/master-dokter.module';
+import { MasterPoliklinikModule } from './master-poliklinik/master-poliklinik.module';
+import { MasterJenisAlamatModule } from './master-jenis-alamat/master-jenis-alamat.module';
+import { MasterProvinsiModule } from './master-provinsi/master-provinsi.module';
+import { MasterKabupatenModule } from './master-kabupaten/master-kabupaten.module';
+import { MasterKecamatanModule } from './master-kecamatan/master-kecamatan.module';
+import { MasterKelurahanModule } from './master-kelurahan/master-kelurahan.module';
+import { MasterWilayahController } from './master-wilayah/master-wilayah.controller';
+
+@Module({
+  imports: [PrismaModule, PasienModule, KunjunganModule, AntreanModule, AsesmenKeperawatanModule, PemeriksaanDokterModule, ResepModule, TagihanModule, MasterDokterModule, MasterPoliklinikModule, MasterJenisAlamatModule, MasterProvinsiModule, MasterKabupatenModule, MasterKecamatanModule, MasterKelurahanModule],
+  controllers: [AppController, MasterWilayahController],
+  providers: [AppService],
+})
+export class AppModule {}
+
+
+
+
+
