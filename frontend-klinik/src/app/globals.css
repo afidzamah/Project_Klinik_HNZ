@@ -19,6 +19,31 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --color-border: var(--border-premium);
+
+  /* Premium Medical Cyan/Sky Blue color mapping (#29B6F6 palette) */
+  --color-red-50: #e0f7fa;
+  --color-red-100: #b3e5fc;
+  --color-red-200: #81d4fa;
+  --color-red-300: #4fc3f7;
+  --color-red-400: #29b6f6; /* User's exact #29B6F6 Sky Blue */
+  --color-red-500: #0ea5e9; /* Sky-500 */
+  --color-red-600: #0284c7; /* Sky-600 */
+  --color-red-650: #0277bd;
+  --color-red-700: #01579b;
+  --color-red-800: #003c71;
+  --color-red-900: #002d54;
+
+  --color-rose-50: #e0f2f1;
+  --color-rose-100: #b2dfdb;
+  --color-rose-200: #80cbc4;
+  --color-rose-300: #4db6ac;
+  --color-rose-400: #26a69a;
+  --color-rose-500: #009688; /* Medical Teal-500 */
+  --color-rose-600: #00897b; /* Teal-600 */
+  --color-rose-650: #00796b;
+  --color-rose-700: #00695c;
+  --color-rose-800: #004d40;
+  --color-rose-900: #00332c;
 }
 
 body {
@@ -55,7 +80,7 @@ a, button, input, select, textarea {
 }
 .hover-premium-lift:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 20px -8px rgba(225, 29, 72, 0.12), 0 8px 12px -6px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 12px 20px -8px rgba(41, 182, 246, 0.12), 0 8px 12px -6px rgba(0, 0, 0, 0.04);
 }
 
 /* Gorgeous pulsing green light indicator for active live state */
@@ -107,24 +132,56 @@ a, button, input, select, textarea {
   color: #f1f5f9 !important;
 }
 
+.dark .text-slate-950 {
+  color: #ffffff !important;
+}
+
 .dark .text-slate-900 {
   color: #f8fafc !important;
 }
 
 .dark .text-slate-800 {
-  color: #e2e8f0 !important;
+  color: #f1f5f9 !important;
 }
 
 .dark .text-slate-700 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-slate-650 {
   color: #cbd5e1 !important;
 }
 
 .dark .text-slate-600 {
-  color: #94a3b8 !important;
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-550 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-505 {
+  color: #cbd5e1 !important;
 }
 
 .dark .text-slate-500 {
-  color: #64748b !important;
+  color: #cbd5e1 !important; /* Extremely clear and readable */
+}
+
+.dark .text-slate-450 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-400 {
+  color: #cbd5e1 !important; /* Extremely clear and readable */
+}
+
+.dark .text-slate-350 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-300 {
+  color: #cbd5e1 !important; /* Extremely clear and readable */
 }
 
 /* Background slate overrides in Dark Mode */
@@ -171,7 +228,7 @@ a, button, input, select, textarea {
 .dark input:not([type="checkbox"]):focus, 
 .dark select:focus, 
 .dark textarea:focus {
-  border-color: rgba(239, 68, 68, 0.5) !important;
+  border-color: rgba(41, 182, 246, 0.5) !important;
   background-color: #0f172a !important;
 }
 
@@ -212,9 +269,9 @@ a, button, input, select, textarea {
 }
 
 .dark .bg-red-50 {
-  background-color: rgba(239, 68, 68, 0.15) !important;
-  color: #f87171 !important;
-  border-color: rgba(239, 68, 68, 0.2) !important;
+  background-color: rgba(41, 182, 246, 0.15) !important;
+  color: #81d4fa !important;
+  border-color: rgba(41, 182, 246, 0.2) !important;
 }
 
 .dark .bg-blue-50 {

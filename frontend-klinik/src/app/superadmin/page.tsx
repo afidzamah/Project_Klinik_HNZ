@@ -226,7 +226,7 @@ export default function SuperadminPage() {
       <div className="space-y-6">
         
         {/* ================= HEADER PANEL DENGAN BRANDING CRIMSON ================= */}
-        <div className="relative overflow-hidden flex flex-col md:flex-row md:items-center md:justify-between gap-6 bg-gradient-to-br from-white via-white to-slate-50/50 p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-md">
+        <div className="relative overflow-hidden flex flex-col md:flex-row md:items-center md:justify-between gap-6 bg-gradient-to-br from-white via-white to-slate-50/50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950/40 p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-md">
           {/* Subtle top ambient glowing light */}
           <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-red-500 via-rose-500 to-amber-500" />
           <div className="relative z-10">
