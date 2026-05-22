@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -102,7 +103,7 @@ export default function MasterLayout({ children }: { children: React.ReactNode }
     }
 
     // Verify token with backend
-    fetch('http://localhost:3000/auth/me', {
+    fetch(`${API_URL}/auth/me`, {
       headers: {
         'Authorization': `Bearer ${localToken}`
       }
@@ -153,7 +154,8 @@ export default function MasterLayout({ children }: { children: React.ReactNode }
       const localToken = localStorage.getItem('token');
       if (localToken) {
         const urlStr = typeof input === 'string' ? input : (input as any).url || '';
-        if (urlStr.includes('localhost:3000')) {
+        const isBackendCall = urlStr.includes('localhost:3000') || (API_URL && urlStr.includes(API_URL));
+        if (isBackendCall) {
           init = init || {};
           const headers = new Headers(init.headers || {});
           if (!headers.has('Authorization')) {
@@ -175,7 +177,7 @@ export default function MasterLayout({ children }: { children: React.ReactNode }
     if (!token) return;
     setFetchingLogs(true);
     try {
-      const res = await fetch('http://localhost:3000/auth/logs', {
+      const res = await fetch(`${API_URL}/auth/logs`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -202,7 +204,7 @@ export default function MasterLayout({ children }: { children: React.ReactNode }
   const handleLogout = async () => {
     if (token) {
       try {
-        await fetch('http://localhost:3000/auth/logout', {
+        await fetch(`${API_URL}/auth/logout`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token }),

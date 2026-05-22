@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import { useState, useEffect } from 'react';
 
@@ -44,7 +45,7 @@ export default function KioskPage() {
     setLoading(true);
     try {
       // Menembak API backend untuk membuat antrean Loket baru
-      const response = await fetch('http://localhost:3000/antrean', {
+      const response = await fetch(`${API_URL}/antrean`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

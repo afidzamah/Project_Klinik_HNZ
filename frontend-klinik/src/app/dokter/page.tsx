@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import { useState, useEffect } from 'react';
 import MasterLayout from '@/components/MasterLayout';
@@ -23,7 +24,7 @@ export default function DokterDashboard() {
   // Ambil data antrean perawat (Tipe Poli) yang siap diperiksa dokter
   const fetchQueue = async () => {
     try {
-      const res = await fetch('http://localhost:3000/antrean');
+      const res = await fetch(`${API_URL}/antrean`);
       const data = await res.json();
       // Ambil tipe Poli yang statusnya Tunggu atau Panggil hari ini
       const poliQueue = data.filter((item: any) => {
@@ -66,7 +67,7 @@ export default function DokterDashboard() {
 
     setLoadingAI(true);
     try {
-      const res = await fetch('http://localhost:3000/pemeriksaan-dokter/analisis-ai', {
+      const res = await fetch(`${API_URL}/pemeriksaan-dokter/analisis-ai`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -96,7 +97,7 @@ export default function DokterDashboard() {
 
     try {
       // 1. Simpan Pemeriksaan SOAP Dokter
-      const resSOAP = await fetch('http://localhost:3000/pemeriksaan-dokter', {
+      const resSOAP = await fetch(`${API_URL}/pemeriksaan-dokter`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -110,7 +111,7 @@ export default function DokterDashboard() {
       if (!resSOAP.ok) throw new Error('Gagal menyimpan rekam medis SOAP.');
 
       // 2. Update status antrean pasien di poli ini menjadi Selesai agar lanjut ke kasir
-      await fetch(`http://localhost:3000/antrean/${activePasien.id_antrean}`, {
+      await fetch(`${API_URL}/antrean/${activePasien.id_antrean}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status_panggil: 'Selesai' }),

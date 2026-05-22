@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import MasterLayout from '@/components/MasterLayout';
 import { useState, useEffect } from 'react';
@@ -42,7 +43,7 @@ export default function NurseStationDashboard() {
 
   const fetchAntreanPoli = async () => {
     try {
-      const response = await fetch('http://localhost:3000/antrean');
+      const response = await fetch(`${API_URL}/antrean`);
       const data = await response.json();
       
       const poliQueue = data.filter((item: any) => {
@@ -102,7 +103,7 @@ export default function NurseStationDashboard() {
     
     setLoading(true);
     try {
-      const resTriage = await fetch('http://localhost:3000/asesmen-keperawatan', {
+      const resTriage = await fetch(`${API_URL}/asesmen-keperawatan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

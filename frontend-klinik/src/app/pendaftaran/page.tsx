@@ -1,6 +1,7 @@
 //D:\develop\Project_Klinik_HNZ\frontend-klinik\src\app\pendaftaran.page.tsx
 
 'use client';
+import { API_URL } from '@/lib/api';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -74,25 +75,25 @@ export default function PendaftaranDashboard() {
 
   const fetchData = async () => {
     try {
-      const resAntrean = await fetch('http://localhost:3000/antrean');
+      const resAntrean = await fetch(`${API_URL}/antrean`);
       const dataAntrean = await resAntrean.json();
       setRawAntreanList(Array.isArray(dataAntrean) ? dataAntrean : []);
 
-      const resPoli = await fetch('http://localhost:3000/master-poliklinik');
+      const resPoli = await fetch(`${API_URL}/master-poliklinik`);
       const dataPoli = await resPoli.json();
       setMasterPoliklinik(Array.isArray(dataPoli) ? dataPoli : []);
       if (Array.isArray(dataPoli) && dataPoli.length > 0 && !idPoli) setIdPoli(dataPoli[0].id_poli);
 
-      const resDokter = await fetch('http://localhost:3000/master-dokter');
+      const resDokter = await fetch(`${API_URL}/master-dokter`);
       const dataDokter = await resDokter.json();
       setMasterDokter(Array.isArray(dataDokter) ? dataDokter : []);
 
       // 📥 FETCH BARU DENGAN PENGAMAN ARRAY SEHINGGA TIDAK ERROR MAP IS NOT A FUNCTION
-      const resJenis = await fetch('http://localhost:3000/master-wilayah/jenis-alamat');
+      const resJenis = await fetch(`${API_URL}/master-wilayah/jenis-alamat`);
       const dataJenis = await resJenis.json();
       setMasterJenisAlamat(Array.isArray(dataJenis) ? dataJenis : []);
 
-      const resProv = await fetch('http://localhost:3000/master-wilayah/provinsi');
+      const resProv = await fetch(`${API_URL}/master-wilayah/provinsi`);
       const dataProv = await resProv.json();
       setMasterProvinsi(Array.isArray(dataProv) ? dataProv : []);
     } catch (error) {
@@ -102,7 +103,7 @@ export default function PendaftaranDashboard() {
 
   const fetchPasienHistory = async () => {
     try {
-      const res = await fetch('http://localhost:3000/pasien');
+      const res = await fetch(`${API_URL}/pasien`);
       const data = await res.json();
       setPasienHistoryList(Array.isArray(data) ? data : []);
       setIsModalOpen(true);
@@ -138,7 +139,7 @@ export default function PendaftaranDashboard() {
   // 🔗 EFFECT CASCADING: Ambil Kabupaten berdasarkan Provinsi terpilih (DENGAN PENGAMAN ARRAY)
   useEffect(() => {
     if (formPasien.id_provinsi) {
-      fetch(`http://localhost:3000/master-wilayah/kabupaten/${formPasien.id_provinsi}`)
+      fetch(`${API_URL}/master-wilayah/kabupaten/${formPasien.id_provinsi}`)
         .then((res) => res.json())
         .then((data) => setMasterKabupaten(Array.isArray(data) ? data : []))
         .catch((err) => console.error(err));
@@ -150,7 +151,7 @@ export default function PendaftaranDashboard() {
   // 🔗 EFFECT CASCADING: Ambil Kecamatan berdasarkan Kabupaten terpilih (DENGAN PENGAMAN ARRAY)
   useEffect(() => {
     if (formPasien.id_kabupaten) {
-      fetch(`http://localhost:3000/master-wilayah/kecamatan/${formPasien.id_kabupaten}`)
+      fetch(`${API_URL}/master-wilayah/kecamatan/${formPasien.id_kabupaten}`)
         .then((res) => res.json())
         .then((data) => setMasterKecamatan(Array.isArray(data) ? data : []))
         .catch((err) => console.error(err));
@@ -162,7 +163,7 @@ export default function PendaftaranDashboard() {
   // 🔗 EFFECT CASCADING: Ambil Kelurahan berdasarkan Kecamatan terpilih (DENGAN PENGAMAN ARRAY)
   useEffect(() => {
     if (formPasien.id_kecamatan) {
-      fetch(`http://localhost:3000/master-wilayah/kelurahan/${formPasien.id_kecamatan}`)
+      fetch(`${API_URL}/master-wilayah/kelurahan/${formPasien.id_kecamatan}`)
         .then((res) => res.json())
         .then((data) => setMasterKelurahan(Array.isArray(data) ? data : []))
         .catch((err) => console.error(err));
@@ -197,7 +198,7 @@ export default function PendaftaranDashboard() {
     }
 
     try {
-      await fetch(`http://localhost:3000/antrean/${antrean.id_antrean}`, {
+      await fetch(`${API_URL}/antrean/${antrean.id_antrean}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status_panggil: 'Panggil' }),
@@ -307,7 +308,7 @@ export default function PendaftaranDashboard() {
 
       // Buat Pasien Baru (Bila belum ada)
       if (!finalPasienId) {
-        const resPasien = await fetch('http://localhost:3000/pasien', {
+        const resPasien = await fetch(`${API_URL}/pasien`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formPasien),
@@ -318,7 +319,7 @@ export default function PendaftaranDashboard() {
       }
 
       // Mengikutsertakan TANGGAL KUNJUNGAN ke Payload
-      const resKunjungan = await fetch('http://localhost:3000/kunjungan', {
+      const resKunjungan = await fetch(`${API_URL}/kunjungan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -332,7 +333,7 @@ export default function PendaftaranDashboard() {
       if (!resKunjungan.ok) throw new Error('Gagal memproses pembuatan transaksi kunjungan.');
 
       // Antrekan ke Poli
-      await fetch('http://localhost:3000/antrean', {
+      await fetch(`${API_URL}/antrean`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -342,7 +343,7 @@ export default function PendaftaranDashboard() {
       });
 
       // Selesaikan Antrean Kiosk Loket
-      await fetch(`http://localhost:3000/antrean/${activeAntrean.id_antrean}`, {
+      await fetch(`${API_URL}/antrean/${activeAntrean.id_antrean}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status_panggil: 'Selesai' }),

@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import { useState, useEffect } from 'react';
 import MasterLayout from '@/components/MasterLayout';
@@ -21,7 +22,7 @@ export default function FarmasiDashboard() {
   // Ambil data Rekam Medis & Resep dari kamar periksa dokter
   const fetchResep = async () => {
     try {
-      const res = await fetch('http://localhost:3000/pemeriksaan-dokter');
+      const res = await fetch(`${API_URL}/pemeriksaan-dokter`);
       const data = await res.json();
       setResepList(data);
     } catch (error) {

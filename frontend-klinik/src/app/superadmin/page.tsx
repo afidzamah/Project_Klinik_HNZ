@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import React, { useState, useEffect } from 'react';
 import MasterLayout from '@/components/MasterLayout';
@@ -58,7 +59,7 @@ export default function SuperadminPage() {
       if (!token) return;
 
       // Fetch Roles Matrix
-      const resRoles = await fetch('http://localhost:3000/auth/roles', {
+      const resRoles = await fetch(`${API_URL}/auth/roles`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!resRoles.ok) throw new Error('Gagal mengambil data matriks peran.');
@@ -66,7 +67,7 @@ export default function SuperadminPage() {
       setRoles(dataRoles);
 
       // Fetch Pending Accounts
-      const resPending = await fetch('http://localhost:3000/auth/pegawai/pending', {
+      const resPending = await fetch(`${API_URL}/auth/pegawai/pending`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!resPending.ok) throw new Error('Gagal mengambil antrean verifikasi.');
@@ -74,7 +75,7 @@ export default function SuperadminPage() {
       setPendingPegawai(dataPending);
 
       // Fetch Active Accounts
-      const resActive = await fetch('http://localhost:3000/auth/pegawai/active', {
+      const resActive = await fetch(`${API_URL}/auth/pegawai/active`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!resActive.ok) throw new Error('Gagal mengambil kelola pegawai.');
@@ -125,7 +126,7 @@ export default function SuperadminPage() {
     setActionLoading(`save-${role.id_role}`);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:3000/auth/roles/${role.id_role}`, {
+      const res = await fetch(`${API_URL}/auth/roles/${role.id_role}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -160,7 +161,7 @@ export default function SuperadminPage() {
     setActionLoading(`verify-${id}`);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:3000/auth/pegawai/verify', {
+      const res = await fetch(`${API_URL}/auth/pegawai/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -194,7 +195,7 @@ export default function SuperadminPage() {
     const nextStatus = !currentStatus;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:3000/auth/pegawai/toggle-status', {
+      const res = await fetch(`${API_URL}/auth/pegawai/toggle-status`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

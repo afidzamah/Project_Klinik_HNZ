@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from '@/lib/api';
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -14,7 +15,7 @@ export default function LaporanPasienLengkap() {
 
   const fetchTracking = async () => {
     try {
-      const res = await fetch("http://localhost:3000/kunjungan/tracking");
+      const res = await fetch(`${API_URL}/kunjungan/tracking`);
       const data = await res.json();
       setTrackingData(data);
     } catch (error) {

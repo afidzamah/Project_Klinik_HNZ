@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import React, { useState, useEffect } from 'react';
 import MasterLayout from '@/components/MasterLayout';
@@ -23,7 +24,7 @@ export default function MonitoringLoginDashboard() {
     }
 
     try {
-      const res = await fetch('http://localhost:3000/auth/all-logs', {
+      const res = await fetch(`${API_URL}/auth/all-logs`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
