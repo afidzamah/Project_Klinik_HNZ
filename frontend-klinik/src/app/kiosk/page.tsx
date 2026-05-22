@@ -1,12 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function KioskPage() {
   const [currentScreen, setCurrentScreen] = useState<'home' | 'pasien-baru' | 'pasien-lama' | 'sukses'>('home');
   const [nikInput, setNikInput] = useState('');
   const [nomorAntrean, setNomorAntrean] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Theme State
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // Load theme on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+      setTheme('dark');
+      document.documentElement.classList.add('dark');
+    } else {
+      setTheme('light');
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  // Toggle Theme Function
+  const toggleTheme = () => {
+    if (theme === 'light') {
+      setTheme('dark');
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      setTheme('light');
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
 
   // Fungsi mensimulasikan cetak tiket pendaftaran
   // Fungsi mengoneksikan Kiosk langsung ke PostgreSQL lewat API NestJS
@@ -51,9 +81,18 @@ export default function KioskPage() {
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 font-sans text-slate-800">
       {/* HEADER KLINIK */}
-      <header className="bg-red-600 p-6 text-center text-white shadow-md">
+      <header className="relative bg-red-600 p-6 text-center text-white shadow-md">
         <h1 className="text-4xl font-extrabold tracking-wide">KLINIK UTAMA HNZ</h1>
         <p className="mt-1 text-lg text-red-100">Sistem Antrean & Self-Registrasi Mandiri</p>
+        
+        {/* Theme Toggle Button */}
+        <button
+          onClick={toggleTheme}
+          title={theme === 'light' ? 'Aktifkan Mode Gelap' : 'Aktifkan Mode Terang'}
+          className="absolute top-1/2 -translate-y-1/2 right-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white shadow-md transition-all cursor-pointer active:scale-95 duration-200 text-xl"
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
       </header>
 
       {/* AREA UTAMA */}

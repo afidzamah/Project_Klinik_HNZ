@@ -6,6 +6,36 @@ import { useRouter } from 'next/navigation';
 export default function RealLoginPage() {
   const router = useRouter();
   
+  // Theme State
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // Load theme on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+      setTheme('dark');
+      document.documentElement.classList.add('dark');
+    } else {
+      setTheme('light');
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  // Toggle Theme Function
+  const toggleTheme = () => {
+    if (theme === 'light') {
+      setTheme('dark');
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      setTheme('light');
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
+
   // Tab State: 'login' | 'register'
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   
@@ -170,32 +200,42 @@ export default function RealLoginPage() {
   ];
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4 py-12 font-sans text-slate-100 antialiased">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-950 px-4 py-12 font-sans text-slate-800 dark:text-slate-100 antialiased transition-colors duration-300">
       
       {/* 🌌 PREMIUM GLOWING MED-AMBIENT BACKLIGHT */}
-      <div className="absolute top-[-30%] left-[-20%] h-[700px] w-[700px] rounded-full bg-rose-600/10 blur-[130px] animate-pulse duration-10000" />
-      <div className="absolute bottom-[-30%] right-[-20%] h-[700px] w-[700px] rounded-full bg-red-650/10 blur-[130px] animate-pulse duration-7000" />
-      <div className="absolute top-[20%] left-[30%] h-[500px] w-[500px] rounded-full bg-red-500/5 blur-[120px]" />
+      <div className="absolute top-[-30%] left-[-20%] h-[700px] w-[700px] rounded-full bg-rose-600/5 dark:bg-rose-600/10 blur-[130px] animate-pulse duration-10000" />
+      <div className="absolute bottom-[-30%] right-[-20%] h-[700px] w-[700px] rounded-full bg-red-650/5 dark:bg-red-650/10 blur-[130px] animate-pulse duration-7000" />
+      <div className="absolute top-[20%] left-[30%] h-[500px] w-[500px] rounded-full bg-red-500/3 dark:bg-red-500/5 blur-[120px]" />
 
-      <div className="z-10 w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur-2xl shadow-2xl shadow-black/60 transition-all">
+      {/* Floating Theme Toggle */}
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="fixed top-4 right-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 shadow-md transition-all cursor-pointer active:scale-95 duration-200 text-base"
+        title={theme === 'light' ? 'Aktifkan Mode Gelap' : 'Aktifkan Mode Terang'}
+      >
+        {theme === 'light' ? '🌙' : '☀️'}
+      </button>
+
+      <div className="z-10 w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/40 backdrop-blur-2xl shadow-2xl dark:shadow-black/60 transition-all">
         <div className="grid grid-cols-1 md:grid-cols-12">
           
           {/* ================= PANEL KIRI: VISUAL BRANDING MEDIS (5-COLS) ================= */}
-          <div className="relative overflow-hidden md:col-span-5 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-800">
+          <div className="relative overflow-hidden md:col-span-5 bg-gradient-to-br from-red-700 via-red-600 to-rose-700 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 text-white dark:text-slate-100 transition-all duration-300">
             {/* Background pattern grid */}
-            <div className="absolute inset-0 opacity-5 bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:16px_16px]" />
+            <div className="absolute inset-0 opacity-5 bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:16px_16px]" />
             
             {/* Left Top: Hospital Brand Identity */}
             <div className="relative z-10">
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-red-605 to-rose-605 shadow-md shadow-red-500/20 ring-2 ring-red-500/20">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 dark:bg-gradient-to-tr dark:from-red-605 dark:to-rose-605 shadow-md shadow-white/5 dark:shadow-red-500/20 ring-2 ring-white/20 dark:ring-red-500/20">
                   <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 10.5V20a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-9.5m14 0V9a2 2 0 0 0-2-2h-3.5M5 10.5V9a2 2 0 0 1 2-2h3.5m7.5 3.5V5a2 2 0 0 0-2-2h-3.5M5 10.5V5a2 2 0 0 1 2-2h3.5m0 0V9a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V3" />
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-xl font-black tracking-wider text-slate-100">KLINIK HNZ</h2>
-                  <p className="text-[10px] uppercase font-bold tracking-widest text-red-500">HIS Portal</p>
+                  <h2 className="text-xl font-black tracking-wider text-white dark:text-slate-100">KLINIK HNZ</h2>
+                  <p className="text-[10px] uppercase font-bold tracking-widest text-red-200 dark:text-red-500">HIS Portal</p>
                 </div>
               </div>
             </div>
@@ -204,12 +244,12 @@ export default function RealLoginPage() {
             <div className="relative z-10 my-12 flex flex-col items-center justify-center text-center">
               <div className="w-full max-w-[260px] h-20 mb-6 flex items-center justify-center">
                 <svg className="w-full h-full text-red-500" viewBox="0 0 300 100" fill="none">
-                  {/* Background ECG heartbeat path */}
+                  {/* Background ECG heartbeat path - lighter stroke in light mode red bg */}
                   <path d="M 0 50 L 80 50 L 90 35 L 100 65 L 110 50 L 130 50 L 140 10 L 155 90 L 170 50 L 200 50 L 210 40 L 220 50 L 300 50" 
-                        stroke="rgba(239, 68, 68, 0.15)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        stroke={theme === 'light' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(239, 68, 68, 0.15)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   {/* Glowing Animated Heartbeat Path */}
                   <path d="M 0 50 L 80 50 L 90 35 L 100 65 L 110 50 L 130 50 L 140 10 L 155 90 L 170 50 L 200 50 L 210 40 L 220 50 L 300 50" 
-                        stroke="url(#pulse-grad)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"
+                        stroke={theme === 'light' ? '#ffffff' : 'url(#pulse-grad)'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"
                         strokeDasharray="600" strokeDashoffset="600"
                         className="animate-draw-ecg" />
                   <defs>
@@ -222,25 +262,25 @@ export default function RealLoginPage() {
                 </svg>
               </div>
 
-              <h3 className="text-md font-bold text-slate-200">Sistem Informasi Rumah Sakit</h3>
-              <p className="mt-2 text-xs leading-relaxed text-slate-400 max-w-[260px]">
+              <h3 className="text-md font-bold text-white dark:text-slate-200">Sistem Informasi Rumah Sakit</h3>
+              <p className="mt-2 text-xs leading-relaxed text-red-100 dark:text-slate-400 max-w-[260px]">
                 Akses terenkripsi ke modul Rekam Medis Elektronik, E-Resep, Triase, Keuangan, dan Manajemen Klinik Utama HNZ.
               </p>
             </div>
 
             {/* Left Bottom: Security & HIPAA Badges */}
-            <div className="relative z-10 pt-6 border-t border-slate-800/60 flex flex-col gap-3">
-              <div className="flex items-center gap-2.5 text-slate-500">
-                <svg className="h-4.5 w-4.5 text-red-500/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <div className="relative z-10 pt-6 border-t border-red-500/20 dark:border-slate-800/60 flex flex-col gap-3">
+              <div className="flex items-center gap-2.5 text-red-100/90 dark:text-slate-500">
+                <svg className="h-4.5 w-4.5 text-white dark:text-red-500/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                <span className="text-[10px] tracking-wide uppercase font-bold text-slate-400">HIPAA Compliant Datacenter</span>
+                <span className="text-[10px] tracking-wide uppercase font-bold text-red-100 dark:text-slate-400">HIPAA Compliant Datacenter</span>
               </div>
-              <div className="flex items-center gap-2.5 text-slate-500">
-                <svg className="h-4.5 w-4.5 text-rose-500/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <div className="flex items-center gap-2.5 text-red-100/90 dark:text-slate-500">
+                <svg className="h-4.5 w-4.5 text-white dark:text-rose-500/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2zm10-10V7a4 4 0 0 0-8 0v4h8z" />
                 </svg>
-                <span className="text-[10px] tracking-wide uppercase font-bold text-slate-400">256-Bit SSL Encryption</span>
+                <span className="text-[10px] tracking-wide uppercase font-bold text-red-100 dark:text-slate-400">256-Bit SSL Encryption</span>
               </div>
             </div>
 
@@ -258,26 +298,26 @@ export default function RealLoginPage() {
           </div>
 
           {/* ================= PANEL KANAN: FORM SECURE PORTAL (7-COLS) ================= */}
-          <div className="md:col-span-7 p-8 md:p-12 flex flex-col justify-center bg-slate-900/20">
+          <div className="md:col-span-7 p-8 md:p-12 flex flex-col justify-center bg-slate-100/30 dark:bg-slate-900/20">
             
             {/* Header Form */}
             <div className="mb-8">
-              <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+              <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
                 <span>🔐</span> Medis Secure Portal
               </h1>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Gunakan ID akun terdaftar medis Anda untuk mengakses stasiun pelayanan Anda.
               </p>
             </div>
 
             {/* Tab Selector: Login vs Register */}
-            <div className="mb-8 flex rounded-xl bg-slate-950 p-1 border border-slate-800">
+            <div className="mb-8 flex rounded-xl bg-slate-200 dark:bg-slate-950 p-1 border border-slate-300 dark:border-slate-800">
               <button
                 onClick={() => setActiveTab('login')}
                 className={`flex-1 rounded-lg py-3 text-center text-xs font-black tracking-wide uppercase transition-all duration-300 cursor-pointer ${
                   activeTab === 'login'
                     ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-650/15'
-                    : 'text-slate-400 hover:text-slate-200'
+                    : 'text-slate-650 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 Sign In / Masuk
@@ -287,7 +327,7 @@ export default function RealLoginPage() {
                 className={`flex-1 rounded-lg py-3 text-center text-xs font-black tracking-wide uppercase transition-all duration-300 cursor-pointer ${
                   activeTab === 'register'
                     ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-650/15'
-                    : 'text-slate-400 hover:text-slate-200'
+                    : 'text-slate-650 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 Register / Daftar
@@ -301,7 +341,7 @@ export default function RealLoginPage() {
                 
                 {/* Username Input */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold tracking-widest text-slate-400 uppercase flex items-center gap-1.5">
+                  <label className="text-[10px] font-bold tracking-widest text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5">
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
@@ -313,14 +353,14 @@ export default function RealLoginPage() {
                     placeholder="Masukkan username Anda..."
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 text-xs text-slate-100 placeholder-slate-600 outline-none transition-all focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30 focus:bg-slate-950"
+                    className="w-full rounded-xl border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 outline-none transition-all focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30 focus:bg-white dark:focus:bg-slate-950"
                   />
                 </div>
 
                 {/* Password Input */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-bold tracking-widest text-slate-400 uppercase flex items-center gap-1.5">
+                    <label className="text-[10px] font-bold tracking-widest text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5">
                       <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2zm10-10V7a4 4 0 0 0-8 0v4h8z" />
                       </svg>
@@ -334,12 +374,12 @@ export default function RealLoginPage() {
                       placeholder="Masukkan password rahasia..."
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 pr-11 text-xs text-slate-100 placeholder-slate-600 outline-none transition-all focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30 focus:bg-slate-950"
+                      className="w-full rounded-xl border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3.5 pr-11 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 outline-none transition-all focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30 focus:bg-white dark:focus:bg-slate-950"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-400 dark:hover:text-slate-300 transition-colors"
                     >
                       {showPassword ? (
                         <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -357,7 +397,7 @@ export default function RealLoginPage() {
 
                 {/* Role / Station Selector */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold tracking-widest text-slate-400 uppercase flex items-center gap-1.5">
+                  <label className="text-[10px] font-bold tracking-widest text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5">
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5m-4 0h4" />
                     </svg>
@@ -367,12 +407,12 @@ export default function RealLoginPage() {
                     value={role}
                     required
                     onChange={(e) => setRole(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 text-xs text-slate-300 outline-none transition-all focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30 focus:bg-slate-950 appearance-none"
+                    className="w-full rounded-xl border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3.5 text-xs text-slate-700 dark:text-slate-300 outline-none transition-all focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30 focus:bg-white dark:focus:bg-slate-950 appearance-none"
                     style={{ backgroundImage: 'url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%2394a3b8\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E")', backgroundPosition: 'right 1rem center', backgroundSize: '1.25rem', backgroundRepeat: 'no-repeat' }}
                   >
-                    <option value="" className="bg-slate-950">-- Pilih Stasiun Kerja --</option>
+                    <option value="" className="bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-300">-- Pilih Stasiun Kerja --</option>
                     {displayRoles.map((r) => (
-                      <option key={r.kode_role} value={r.kode_role} className="bg-slate-950">
+                      <option key={r.kode_role} value={r.kode_role} className="bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-300">
                         {r.nama_role}
                       </option>
                     ))}
@@ -426,7 +466,7 @@ export default function RealLoginPage() {
                 
                 {/* Nama Lengkap Input */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold tracking-widest text-slate-400 uppercase flex items-center gap-1.5">
+                  <label className="text-[10px] font-bold tracking-widest text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5">
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-5m-4 0V5a2 2 0 1 1 4 0v1m-4 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1" />
                     </svg>
@@ -438,13 +478,13 @@ export default function RealLoginPage() {
                     placeholder="Contoh: dr. Budi Santoso, Sp.A"
                     value={regNama}
                     onChange={(e) => setRegNama(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-100 placeholder-slate-600 outline-none transition-all focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30 focus:bg-slate-950"
+                    className="w-full rounded-xl border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 outline-none transition-all focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30 focus:bg-white dark:focus:bg-slate-950"
                   />
                 </div>
 
                 {/* Username Registrasi */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold tracking-widest text-slate-400 uppercase flex items-center gap-1.5">
+                  <label className="text-[10px] font-bold tracking-widest text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5">
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
@@ -456,13 +496,13 @@ export default function RealLoginPage() {
                     placeholder="Contoh: budi.spesialis"
                     value={regUsername}
                     onChange={(e) => setRegUsername(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-100 placeholder-slate-600 outline-none transition-all focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30 focus:bg-slate-950"
+                    className="w-full rounded-xl border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 outline-none transition-all focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30 focus:bg-white dark:focus:bg-slate-950"
                   />
                 </div>
 
                 {/* Password Registrasi */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold tracking-widest text-slate-400 uppercase flex items-center gap-1.5">
+                  <label className="text-[10px] font-bold tracking-widest text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5">
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2zm10-10V7a4 4 0 0 0-8 0v4h8z" />
                     </svg>
@@ -475,7 +515,7 @@ export default function RealLoginPage() {
                       placeholder="Sandi minimal 6 karakter..."
                       value={regPassword}
                       onChange={(e) => setRegPassword(e.target.value)}
-                      className="w-full rounded-xl border border-slate-800 bg-slate-950/60 p-3 pr-11 text-xs text-slate-100 placeholder-slate-600 outline-none transition-all focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30 focus:bg-slate-950"
+                      className="w-full rounded-xl border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3 pr-11 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 outline-none transition-all focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30 focus:bg-white dark:focus:bg-slate-950"
                     />
                     <button
                       type="button"
@@ -498,7 +538,7 @@ export default function RealLoginPage() {
 
                 {/* Stasiun Kerja / Peran Registrasi */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold tracking-widest text-slate-400 uppercase flex items-center gap-1.5">
+                  <label className="text-[10px] font-bold tracking-widest text-slate-505 dark:text-slate-400 uppercase flex items-center gap-1.5">
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5m-4 0h4" />
                     </svg>
@@ -508,12 +548,12 @@ export default function RealLoginPage() {
                     value={regRole}
                     required
                     onChange={(e) => setRegRole(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-300 outline-none transition-all focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30 focus:bg-slate-950 appearance-none"
+                    className="w-full rounded-xl border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-950/60 p-3 text-xs text-slate-700 dark:text-slate-300 outline-none transition-all focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30 focus:bg-white dark:focus:bg-slate-950 appearance-none"
                     style={{ backgroundImage: 'url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%2394a3b8\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E")', backgroundPosition: 'right 1rem center', backgroundSize: '1.25rem', backgroundRepeat: 'no-repeat' }}
                   >
-                    <option value="" className="bg-slate-950">-- Pilih Stasiun Kerja --</option>
+                    <option value="" className="bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-300">-- Pilih Stasiun Kerja --</option>
                     {displayRoles.map((r) => (
-                      <option key={r.kode_role} value={r.kode_role} className="bg-slate-950">
+                      <option key={r.kode_role} value={r.kode_role} className="bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-300">
                         {r.nama_role}
                       </option>
                     ))}
@@ -579,7 +619,7 @@ export default function RealLoginPage() {
       </div>
       
       {/* Footer copyright */}
-      <div className="absolute bottom-4 text-center text-[10px] text-slate-600">
+      <div className="absolute bottom-4 text-center text-[10px] text-slate-500 dark:text-slate-600">
         <p>Sistem Informasi Rumah Sakit & HIS Klinik Utama HNZ &copy; 2026. Semua Hak Dilindungi.</p>
       </div>
 
