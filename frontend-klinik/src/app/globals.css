@@ -6,6 +6,13 @@
   --border-premium: rgba(226, 232, 240, 0.7); /* Smooth soft border */
 }
 
+/* Explicit class-based dark mode override */
+.dark {
+  --background: #090d16; /* Ultra-deep premium dark blue-slate */
+  --foreground: #f1f5f9; /* Slate-100 */
+  --border-premium: rgba(51, 65, 85, 0.45); /* Smooth dark border */
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -14,27 +21,21 @@
   --color-border: var(--border-premium);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a;
-    --foreground: #f8fafc;
-    --border-premium: rgba(51, 65, 85, 0.45);
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Premium smooth border utilities to override browser and Tailwind preflight defaults */
+/* Premium smooth border utilities to override browser and Tailwind defaults */
 .border:not([class*="border-red-"]):not([class*="border-rose-"]):not([class*="border-emerald-"]):not([class*="border-transparent"]),
 .border-t:not([class*="border-red-"]):not([class*="border-rose-"]):not([class*="border-emerald-"]):not([class*="border-transparent"]),
 .border-b:not([class*="border-red-"]):not([class*="border-rose-"]):not([class*="border-emerald-"]):not([class*="border-transparent"]),
 .border-l:not([class*="border-red-"]):not([class*="border-rose-"]):not([class*="border-emerald-"]):not([class*="border-transparent"]),
 .border-r:not([class*="border-red-"]):not([class*="border-rose-"]):not([class*="border-emerald-"]):not([class*="border-transparent"]) {
   border-color: var(--border-premium) !important;
+  transition: border-color 0.3s ease;
 }
 
 /* Smooth backdrop blurs and subtle transitions */
@@ -68,4 +69,196 @@ a, button, input, select, textarea {
   animation: glowing-emerald 2s infinite;
 }
 
+/* ======================================================== */
+/* ================= PREMIUM DARK MODE RULES ================= */
+/* ======================================================== */
 
+.dark body {
+  background-color: #090d16 !important;
+  color: #f1f5f9 !important;
+}
+
+/* Header & Sidebar Dark Mode Overrides */
+.dark header {
+  background-color: #0f172a !important;
+  border-color: rgba(51, 65, 85, 0.4) !important;
+  color: #f1f5f9 !important;
+}
+
+.dark header .bg-slate-100 {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: rgba(71, 85, 105, 0.3) !important;
+}
+
+.dark aside {
+  background-color: #0f172a !important;
+  border-color: rgba(51, 65, 85, 0.3) !important;
+}
+
+.dark main {
+  background-color: #090d16 !important;
+}
+
+/* White elements & Cards override in Dark Mode */
+.dark .bg-white {
+  background-color: #0f172a !important;
+  border-color: rgba(51, 65, 85, 0.4) !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+.dark .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+.dark .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Background slate overrides in Dark Mode */
+.dark .bg-slate-50 {
+  background-color: #090d16 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .bg-slate-100 {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.dark .bg-slate-100\/80 {
+  background-color: rgba(30, 41, 59, 0.8) !important;
+}
+
+.dark .bg-slate-150 {
+  background-color: #1e293b !important;
+}
+
+/* Border overrides in Dark Mode */
+.dark .border-slate-200 {
+  border-color: rgba(51, 65, 85, 0.4) !important;
+}
+
+.dark .border-slate-150 {
+  border-color: rgba(51, 65, 85, 0.3) !important;
+}
+
+.dark .border-slate-100 {
+  border-color: rgba(51, 65, 85, 0.25) !important;
+}
+
+/* Interactive elements & inputs inside Dark Mode */
+.dark input:not([type="checkbox"]), 
+.dark select, 
+.dark textarea {
+  background-color: #090d16 !important;
+  color: #f8fafc !important;
+  border-color: rgba(71, 85, 105, 0.5) !important;
+}
+
+.dark input:not([type="checkbox"]):focus, 
+.dark select:focus, 
+.dark textarea:focus {
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  background-color: #0f172a !important;
+}
+
+.dark input::placeholder {
+  color: #475569 !important;
+}
+
+/* Sidebar lists hover effect in dark mode */
+.dark .hover\:bg-slate-50:hover {
+  background-color: rgba(30, 41, 59, 0.5) !important;
+  color: #ffffff !important;
+}
+
+.dark .hover\:text-slate-950:hover {
+  color: #ffffff !important;
+}
+
+.dark .text-slate-600.hover\:text-slate-950:hover {
+  color: #ffffff !important;
+}
+
+/* Drawer / Modal content in dark mode */
+.dark .bg-white.rounded-3xl.p-6.shadow-2xl {
+  background-color: #0f172a !important;
+  border-color: rgba(51, 65, 85, 0.5) !important;
+}
+
+.dark .bg-slate-50.p-4.border.border-slate-100 {
+  background-color: #090d16 !important;
+  border-color: rgba(51, 65, 85, 0.3) !important;
+}
+
+/* Status Badges & Pills styling in Dark Mode */
+.dark .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+.dark .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  color: #f87171 !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
+}
+
+.dark .bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  color: #60a5fa !important;
+  border-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+.dark .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+.dark .bg-purple-50 {
+  background-color: rgba(139, 92, 246, 0.15) !important;
+  color: #a78bfa !important;
+  border-color: rgba(139, 92, 246, 0.2) !important;
+}
+
+/* Tables header & hover styling in Dark Mode */
+.dark thead tr, .dark tr.bg-slate-800 {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+.dark tbody tr {
+  border-color: rgba(51, 65, 85, 0.25) !important;
+}
+
+.dark tbody tr:hover {
+  background-color: rgba(30, 41, 59, 0.3) !important;
+}
+
+/* Scrollbar styling inside dark mode */
+.dark ::-webkit-scrollbar-track {
+  background: #090d16;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}

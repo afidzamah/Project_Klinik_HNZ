@@ -34,13 +34,39 @@ export default function MasterLayout({ children }: { children: React.ReactNode }
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Load sidebar state from localStorage after mount to prevent Next.js server-client mismatch
+  // Theme State
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // Load theme & sidebar state from localStorage after mount to prevent Next.js server-client mismatch
   useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+      setTheme('dark');
+      document.documentElement.classList.add('dark');
+    } else {
+      setTheme('light');
+      document.documentElement.classList.remove('dark');
+    }
+
     const saved = localStorage.getItem('sidebar_collapsed');
     if (saved !== null) {
       setIsSidebarCollapsed(saved === 'true');
     }
   }, []);
+
+  const toggleTheme = () => {
+    if (theme === 'light') {
+      setTheme('dark');
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      setTheme('light');
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
 
   const toggleSidebar = () => {
     const nextState = !isSidebarCollapsed;
@@ -268,11 +294,20 @@ export default function MasterLayout({ children }: { children: React.ReactNode }
           {/* SISI KANAN: Status Petugas & Riwayat Sesi */}
           <div className="flex items-center space-x-3">
             
+            {/* Dark/Light Theme Toggle Switch */}
+            <button
+              onClick={toggleTheme}
+              title={theme === 'light' ? 'Aktifkan Mode Gelap' : 'Aktifkan Mode Terang'}
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 hover:bg-red-50 border border-slate-200 hover:border-red-200 text-slate-600 hover:text-red-600 shadow-sm transition-all cursor-pointer active:scale-95 duration-200 select-none text-base"
+            >
+              {theme === 'light' ? '🌙' : '☀️'}
+            </button>
+
             {/* Monitor Sesi Trigger (Premium Audit Icon) */}
             <button
               onClick={() => setIsModalOpen(true)}
               title="Riwayat Aktivitas Sesi"
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 hover:bg-red-50 border border-slate-200 hover:border-red-200 text-slate-600 hover:text-red-600 shadow-sm transition-all cursor-pointer active:scale-95"
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 hover:bg-red-50 border border-slate-200 hover:border-red-200 text-slate-600 hover:text-red-600 shadow-sm transition-all cursor-pointer active:scale-95 select-none"
             >
               📜
             </button>
