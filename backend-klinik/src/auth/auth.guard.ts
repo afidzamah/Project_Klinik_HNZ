@@ -21,7 +21,16 @@ export class AuthGuard implements CanActivate {
     }
 
     // Attach user and session to request object
-    request.user = session.pegawai;
+    request.user = {
+      id_pegawai: session.user.pegawai?.id_pegawai || session.user.id_user,
+      id_user: session.user.id_user,
+      username: session.user.username,
+      nama_lengkap: session.user.pegawai?.nama_lengkap || '',
+      role: session.user.role,
+      status_aktif: session.user.status_aktif,
+      status_verifikasi: session.user.status_verifikasi,
+      master_role: session.user.master_role,
+    };
     request.session = session;
 
     return true;

@@ -4,10 +4,18 @@ import { API_URL } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import MasterLayout from '@/components/MasterLayout';
 
+const formatLocalDate = (dateInput?: string | Date) => {
+  const d = dateInput ? new Date(dateInput) : new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function DokterDashboard() {
   const [pasienQueue, setPasienQueue] = useState<any[]>([]);
   const [activePasien, setActivePasien] = useState<any>(null);
-  const [filterTanggal] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [filterTanggal] = useState<string>(formatLocalDate());
   
   // State Input SOAP Dokter
   const [anamnesisSubjektif, setAnamnesisSubjektif] = useState<string>('');
@@ -28,7 +36,7 @@ export default function DokterDashboard() {
       const data = await res.json();
       // Ambil tipe Poli yang statusnya Tunggu atau Panggil hari ini
       const poliQueue = data.filter((item: any) => {
-        const tanggalItem = new Date(item.created_at).toISOString().split('T')[0];
+        const tanggalItem = formatLocalDate(item.created_at);
         return item.tipe_antrean === 'Poli' && tanggalItem === filterTanggal && item.status_panggil !== 'Selesai';
       });
       setPasienQueue(poliQueue);

@@ -1,17 +1,198 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #f8fafc; /* Slate-50 background for clean modern aesthetic */
-  --foreground: #0f172a; /* Slate-900 for modern premium reading contrast */
-  --border-premium: rgba(226, 232, 240, 0.7); /* Smooth soft border */
+  /* Default Theme: Warm White */
+  --background: #F8F5F0;
+  --foreground: #0f172a;
+  --border-premium: rgba(226, 232, 240, 0.7);
+  --card-bg: #ffffff;
+  --bg-slate-50: #FAF8F5;
+  --bg-slate-100: #EFEADF;
+  --brand-primary: #C05A30;
+  --brand-hover: #981818;
+  --brand-light: rgba(192, 90, 48, 0.08);
 }
 
-/* Explicit class-based dark mode override */
-.dark {
-  --background: #090d16; /* Ultra-deep premium dark blue-slate */
-  --foreground: #f1f5f9; /* Slate-100 */
-  --border-premium: rgba(51, 65, 85, 0.45); /* Smooth dark border */
+/* ======================================================== */
+/* ==================== 7 PRESET THEMES =================== */
+/* ======================================================== */
+
+/* 1. Warm White (Light Workstation) */
+.theme-warm-white {
+  --background: #F8F5F0;
+  --foreground: #0f172a;
+  --border-premium: rgba(226, 232, 240, 0.7);
+  --card-bg: #ffffff;
+  --bg-slate-50: #FAF8F5;
+  --bg-slate-100: #EFEADF;
+  --brand-primary: #C05A30;
+  --brand-hover: #981818;
+  --brand-light: rgba(192, 90, 48, 0.08);
 }
+
+/* 2. Dark Slate (Comfortable Slate Dark) */
+.theme-dark-slate {
+  --background: #4A5568;
+  --foreground: #f1f5f9;
+  --border-premium: rgba(255, 255, 255, 0.12);
+  --card-bg: #1A202C;
+  --bg-slate-50: #2D3748;
+  --bg-slate-100: #252D3A;
+  --brand-primary: #C05A30;
+  --brand-hover: #981818;
+  --brand-light: rgba(192, 90, 48, 0.18);
+}
+
+/* 3. Pale Fern (Organic Soft Green #C4DDD0) */
+.theme-pale-fern {
+  --background: #EBF2EE; /* Very soft pale green background */
+  --foreground: #1e3328;
+  --border-premium: rgba(196, 221, 208, 0.6);
+  --card-bg: #ffffff;
+  --bg-slate-50: #FAFDFB; /* Light fresh fern */
+  --bg-slate-100: #C4DDD0; /* Pale fern main */
+  --brand-primary: #2B6649; /* Deep leafy forest green */
+  --brand-hover: #3E8B65;
+  --brand-light: rgba(196, 221, 208, 0.25);
+}
+
+/* 4. Mint Mist (Clean Icy Mint #B8EDF0) */
+.theme-mint-mist {
+  --background: #E8F6F7; /* Cool mint breeze */
+  --foreground: #112d30;
+  --border-premium: rgba(184, 237, 240, 0.6);
+  --card-bg: #ffffff;
+  --bg-slate-50: #F4FDFD;
+  --bg-slate-100: #B8EDF0; /* Mint mist main */
+  --brand-primary: #1D6367; /* Teal primary */
+  --brand-hover: #29858A;
+  --brand-light: rgba(184, 237, 240, 0.25);
+}
+
+/* 5. Lilac Soft (Gentle Lavender Lilac #B49ED8) */
+.theme-lilac-soft {
+  --background: #F4F0FA; /* Gentle lilac background */
+  --foreground: #2A1C3E; /* Deep lilac charcoal text */
+  --border-premium: rgba(180, 158, 216, 0.35);
+  --card-bg: #ffffff;
+  --bg-slate-50: #FAF8FE;
+  --bg-slate-100: #E6E0F3; /* Soft light lilac */
+  --brand-primary: #B49ED8; /* Lilac Soft main */
+  --brand-hover: #9C81C8; /* Deeper lilac hover */
+  --brand-light: rgba(180, 158, 216, 0.18);
+}
+
+
+/* 6. Admin Blue (Professional Trust Navy #2563A8) */
+.theme-admin-blue {
+  --background: #8A9AB0; /* Neutral Slate corporate background */
+  --foreground: #0f1c30;
+  --border-premium: rgba(15, 28, 48, 0.2);
+  --card-bg: #ffffff;
+  --bg-slate-50: #F6F9FD;
+  --bg-slate-100: #D2DCE8; /* Harmonized slate offset */
+  --brand-primary: #2563A8; /* Admin Blue main */
+  --brand-hover: #1D4ED8;
+  --brand-light: rgba(37, 99, 168, 0.15);
+}
+
+
+/* 7. Blush Cloud (Cozy Heartfelt Pink #FFE4EF) */
+.theme-blush-cloud {
+  --background: #FAF0F3; /* Warm blush sky */
+  --foreground: #381923;
+  --border-premium: rgba(255, 228, 239, 0.6);
+  --card-bg: #ffffff;
+  --bg-slate-50: #FFF9FB;
+  --bg-slate-100: #FFE4EF; /* Blush cloud main */
+  --brand-primary: #943354; /* Deep dark rose */
+  --brand-hover: #BD4E74;
+  --brand-light: rgba(255, 228, 239, 0.25);
+}
+
+/* 8. Pink Soft (Delicate Rose Blossom #F9A8D4) */
+.theme-pink-soft {
+  --background: #FFF5F8; /* Soft baby pink background */
+  --foreground: #471830; /* Deep pink-charcoal text */
+  --border-premium: rgba(249, 168, 212, 0.35);
+  --card-bg: #ffffff;
+  --bg-slate-50: #FFFDFE;
+  --bg-slate-100: #FCE7F3; /* Pastel pink accent */
+  --brand-primary: #F9A8D4; /* Pink Soft main */
+  --brand-hover: #F472B6; /* Stronger pink hover */
+  --brand-light: rgba(249, 168, 212, 0.18);
+}
+
+/* 9. Sunny Accent (Buttermilk Amber Radiance #FBBF24) */
+.theme-sunny-accent {
+  --background: #FFFDF5; /* Warm milky buttermilk background */
+  --foreground: #451A03; /* Deep amber charcoal text */
+  --border-premium: rgba(251, 191, 36, 0.35);
+  --card-bg: #ffffff;
+  --bg-slate-50: #FFFFFC;
+  --bg-slate-100: #FEF3C7; /* Soft gold-accent */
+  --brand-primary: #FBBF24; /* Sunny Accent main */
+  --brand-hover: #D97706; /* Rich amber hover */
+  --brand-light: rgba(251, 191, 36, 0.18);
+}
+
+/* 10. Blood Red (Bold Luminous Ruby #981818) */
+.theme-blood-red {
+  --background: #FAF2F2; /* Delicate soft ruby backdrop */
+  --foreground: #450A0A; /* Rich burgundy charcoal text */
+  --border-premium: rgba(152, 24, 24, 0.15);
+  --card-bg: #ffffff;
+  --bg-slate-50: #FCFAFA;
+  --bg-slate-100: #FEE2E2; /* Faded red-cream accent */
+  --brand-primary: #981818; /* Blood Red main */
+  --brand-hover: #7F1D1D; /* Deep maroon hover */
+  --brand-light: rgba(152, 24, 24, 0.08);
+}
+
+/* 11. Terracotta (Autumn Clay Warmth #C05A30) */
+.theme-terracotta {
+  --background: #FAF4EF; /* Soft terracotta clay ivory backdrop */
+  --foreground: #431D0D; /* Deep dark cocoa text */
+  --border-premium: rgba(192, 90, 48, 0.2);
+  --card-bg: #ffffff;
+  --bg-slate-50: #FCF8F5;
+  --bg-slate-100: #FFEDD5; /* Faded apricot peach accent */
+  --brand-primary: #C05A30; /* Terracotta main */
+  --brand-hover: #A84720; /* Dark terracotta hover */
+  --brand-light: rgba(192, 90, 48, 0.12);
+}
+
+/* 12. Cozy Lavender (Relaxing Herbal Sanctuary #8B6BBE) */
+.theme-cozy-lavender {
+  --background: #FBF7FF; /* Soothing warm lavender-white backdrop */
+  --foreground: #1E1028; /* Cozy deep herbal purple text */
+  --border-premium: rgba(139, 107, 190, 0.22);
+  --card-bg: #ffffff;
+  --bg-slate-50: #FAF6FF;
+  --bg-slate-100: #EFE8FA; /* Lavender surface backing offset */
+  --brand-primary: #8B6BBE; /* Cozy Lavender main */
+  --brand-hover: #7654A8; /* Rich purple hover */
+  --brand-light: rgba(232, 200, 122, 0.22); /* Cozy golden-amber highlight accent */
+}
+
+/* 13. Deep Bark (Dynamic Organic Dark Forest #5A9A72) */
+.theme-deep-bark {
+  --background: #1E3D2A; /* Deep Forest Green backdrop */
+  --foreground: #D9EBE1; /* Soft clean sage-white text */
+  --border-premium: rgba(90, 154, 114, 0.18);
+  --card-bg: #2D5A3E; /* Forest green surface backing */
+  --bg-slate-50: #336848;
+  --bg-slate-100: #1A3525;
+  --brand-primary: #65D898; /* Glowing, high-contrast bright sage/mint green */
+  --brand-hover: #A3F5C3; /* Highly vibrant hover mint green */
+  --brand-light: rgba(101, 216, 152, 0.15);
+}
+
+
+
+
 
 @theme inline {
   --color-background: var(--background);
@@ -20,37 +201,122 @@
   --font-mono: var(--font-geist-mono);
   --color-border: var(--border-premium);
 
-  /* Premium Medical Cyan/Sky Blue color mapping (#29B6F6 palette) */
-  --color-red-50: #e0f7fa;
-  --color-red-100: #b3e5fc;
-  --color-red-200: #81d4fa;
-  --color-red-300: #4fc3f7;
-  --color-red-400: #29b6f6; /* User's exact #29B6F6 Sky Blue */
-  --color-red-500: #0ea5e9; /* Sky-500 */
-  --color-red-600: #0284c7; /* Sky-600 */
-  --color-red-650: #0277bd;
-  --color-red-700: #01579b;
-  --color-red-800: #003c71;
-  --color-red-900: #002d54;
-
-  --color-rose-50: #e0f2f1;
-  --color-rose-100: #b2dfdb;
-  --color-rose-200: #80cbc4;
-  --color-rose-300: #4db6ac;
-  --color-rose-400: #26a69a;
-  --color-rose-500: #009688; /* Medical Teal-500 */
-  --color-rose-600: #00897b; /* Teal-600 */
-  --color-rose-650: #00796b;
-  --color-rose-700: #00695c;
-  --color-rose-800: #004d40;
-  --color-rose-900: #00332c;
+  /* Unified red-600/650 primary system mapping to brand color properties */
+  --color-red-50: var(--brand-light);
+  --color-red-100: var(--brand-light);
+  --color-red-500: var(--brand-primary);
+  --color-red-600: var(--brand-primary);
+  --color-red-650: var(--brand-primary);
+  --color-red-700: var(--brand-hover);
+  --color-red-800: var(--brand-hover);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
+html, body {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
   font-family: var(--font-sans), sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+main:not(.kiosk-main) {
+  background-color: var(--background) !important;
+  transition: background-color 0.3s ease;
+}
+
+/* Active Theme Variable Mapping for Workstation Components in Light Themes */
+:root:not(.dark) .bg-white {
+  background-color: var(--card-bg) !important;
+}
+:root:not(.dark) .bg-slate-50 {
+  background-color: var(--bg-slate-50) !important;
+}
+:root:not(.dark) .bg-slate-100 {
+  background-color: var(--bg-slate-100) !important;
+}
+:root:not(.dark) .border-slate-200,
+:root:not(.dark) .border-slate-200\/80,
+:root:not(.dark) .border-slate-200\/60,
+:root:not(.dark) .border-slate-200\/55,
+:root:not(.dark) .border-slate-200\/50 {
+  border-color: var(--border-premium) !important;
+}
+
+:root:not(.dark) .bg-\[\#FAF8F5\] {
+  background-color: var(--bg-slate-50) !important;
+}
+
+/* Light Mode Overrides for Slate & Grey Utility Classes to ensure Theme Integrity */
+:root:not(.dark) .bg-slate-200,
+:root:not(.dark) .bg-slate-150 {
+  background-color: var(--bg-slate-100) !important;
+  color: var(--foreground) !important;
+}
+
+:root:not(.dark) .bg-slate-700,
+:root:not(.dark) .bg-slate-800 {
+  background-color: var(--brand-primary) !important;
+  color: #ffffff !important;
+}
+
+:root:not(.dark) .text-slate-900,
+:root:not(.dark) .text-slate-800,
+:root:not(.dark) .text-slate-750,
+:root:not(.dark) .text-slate-700,
+:root:not(.dark) .text-slate-650,
+:root:not(.dark) .text-slate-600 {
+  color: var(--foreground) !important;
+}
+
+:root:not(.dark) .text-slate-500,
+:root:not(.dark) .text-slate-400 {
+  color: color-mix(in srgb, var(--foreground) 70%, #ffffff) !important;
+}
+
+:root:not(.dark) .border-slate-300,
+:root:not(.dark) .border-slate-150,
+:root:not(.dark) .border-slate-100 {
+  border-color: var(--border-premium) !important;
+}
+
+/* Light Mode Overrides for Red & Brand Utility Classes */
+:root:not(.dark) .text-red-500,
+:root:not(.dark) .text-red-600,
+:root:not(.dark) .text-red-650,
+:root:not(.dark) .text-red-700 {
+  color: var(--brand-primary) !important;
+}
+
+:root:not(.dark) .text-red-800,
+:root:not(.dark) .text-red-900 {
+  color: var(--foreground) !important;
+}
+
+:root:not(.dark) .bg-red-50,
+:root:not(.dark) .bg-red-100 {
+  background-color: var(--brand-light) !important;
+  color: var(--brand-primary) !important;
+  border-color: var(--border-premium) !important;
+}
+
+:root:not(.dark) .bg-red-600,
+:root:not(.dark) .bg-red-650 {
+  background-color: var(--brand-primary) !important;
+  color: #ffffff !important;
+}
+
+:root:not(.dark) .bg-red-600:hover,
+:root:not(.dark) .bg-red-650:hover {
+  background-color: var(--brand-hover) !important;
+}
+
+:root:not(.dark) .border-red-600 {
+  border-color: var(--brand-primary) !important;
+}
+
+:root:not(.dark) .border-red-200,
+:root:not(.dark) .border-red-200\/60,
+:root:not(.dark) .border-red-200\/50 {
+  border-color: var(--border-premium) !important;
 }
 
 /* Premium smooth border utilities to override browser and Tailwind defaults */
@@ -99,65 +365,69 @@ a, button, input, select, textarea {
 /* ======================================================== */
 
 .dark body {
-  background-color: #090d16 !important;
-  color: #f1f5f9 !important;
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
 }
 
 /* Header & Sidebar Dark Mode Overrides */
 .dark header {
-  background-color: #0f172a !important;
-  border-color: rgba(51, 65, 85, 0.4) !important;
-  color: #f1f5f9 !important;
+  background-color: var(--bg-slate-50) !important;
+  border-color: var(--border-premium) !important;
+  color: var(--foreground) !important;
 }
 
 .dark header .bg-slate-100 {
-  background-color: #1e293b !important;
-  color: #f8fafc !important;
-  border-color: rgba(71, 85, 105, 0.3) !important;
+  background-color: var(--card-bg) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border-premium) !important;
 }
 
 .dark aside {
-  background-color: #0f172a !important;
-  border-color: rgba(51, 65, 85, 0.3) !important;
+  background-color: var(--bg-slate-50) !important;
+  border-color: var(--border-premium) !important;
 }
 
-.dark main {
-  background-color: #090d16 !important;
+.dark main:not(.kiosk-main) {
+  background-color: var(--background) !important;
 }
 
 /* White elements & Cards override in Dark Mode */
 .dark .bg-white {
-  background-color: #0f172a !important;
-  border-color: rgba(51, 65, 85, 0.4) !important;
-  color: #f1f5f9 !important;
+  background-color: var(--card-bg) !important;
+  border-color: var(--border-premium) !important;
+  color: var(--foreground) !important;
 }
 
+
+/* High-Contrast Typography Hierarchy in Dark Mode (No flat colors!) */
 .dark .text-slate-950 {
   color: #ffffff !important;
+  font-weight: 800 !important;
 }
 
 .dark .text-slate-900 {
-  color: #f8fafc !important;
+  color: #ffffff !important; /* Maximum crisp readability */
+  font-weight: 700 !important;
 }
 
 .dark .text-slate-800 {
-  color: #f1f5f9 !important;
+  color: #ffffff !important;
 }
 
 .dark .text-slate-700 {
-  color: #e2e8f0 !important;
+  color: #f8fafc !important; /* Clean near-white for body keys */
 }
 
 .dark .text-slate-650 {
-  color: #cbd5e1 !important;
+  color: #f1f5f9 !important;
 }
 
 .dark .text-slate-600 {
-  color: #cbd5e1 !important;
+  color: #e2e8f0 !important; /* Visible silver for main values */
 }
 
 .dark .text-slate-550 {
-  color: #cbd5e1 !important;
+  color: #e2e8f0 !important;
 }
 
 .dark .text-slate-505 {
@@ -165,7 +435,7 @@ a, button, input, select, textarea {
 }
 
 .dark .text-slate-500 {
-  color: #cbd5e1 !important; /* Extremely clear and readable */
+  color: #cbd5e1 !important; /* Sub-labels & descriptions - highly readable */
 }
 
 .dark .text-slate-450 {
@@ -173,72 +443,102 @@ a, button, input, select, textarea {
 }
 
 .dark .text-slate-400 {
-  color: #cbd5e1 !important; /* Extremely clear and readable */
+  color: #a0aec0 !important; /* Muted metadata/info - clearly secondary but very sharp */
 }
 
 .dark .text-slate-350 {
-  color: #cbd5e1 !important;
+  color: #a0aec0 !important;
 }
 
 .dark .text-slate-300 {
-  color: #cbd5e1 !important; /* Extremely clear and readable */
+  color: #718096 !important; /* Muted placeholders & deep secondary details */
 }
 
 /* Background slate overrides in Dark Mode */
 .dark .bg-slate-50 {
-  background-color: #090d16 !important;
-  color: #f1f5f9 !important;
+  background-color: #2D3748 !important; /* Medium slate-grey inside cards for gorgeous contrast */
+  color: #ffffff !important;
+}
+
+.dark .bg-\[\#FAF8F5\] {
+  background-color: #2D3748 !important;
 }
 
 .dark .bg-slate-100 {
-  background-color: #1e293b !important;
+  background-color: #252D3A !important; /* Rich deep slate background */
   color: #f8fafc !important;
 }
 
 .dark .bg-slate-100\/80 {
-  background-color: rgba(30, 41, 59, 0.8) !important;
+  background-color: rgba(37, 45, 58, 0.8) !important;
 }
 
 .dark .bg-slate-150 {
-  background-color: #1e293b !important;
+  background-color: #252D3A !important;
 }
 
 /* Border overrides in Dark Mode */
 .dark .border-slate-200 {
-  border-color: rgba(51, 65, 85, 0.4) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
 }
 
 .dark .border-slate-150 {
-  border-color: rgba(51, 65, 85, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 .dark .border-slate-100 {
-  border-color: rgba(51, 65, 85, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* Interactive elements & inputs inside Dark Mode */
+/* Interactive elements & inputs inside Dark Mode - Rich Deep Blue Dark */
 .dark input:not([type="checkbox"]), 
 .dark select, 
 .dark textarea {
-  background-color: #090d16 !important;
-  color: #f8fafc !important;
-  border-color: rgba(71, 85, 105, 0.5) !important;
+  background-color: var(--bg-slate-100) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
 }
 
 .dark input:not([type="checkbox"]):focus, 
 .dark select:focus, 
 .dark textarea:focus {
-  border-color: rgba(41, 182, 246, 0.5) !important;
-  background-color: #0f172a !important;
+  border-color: var(--brand-primary) !important; /* Glowing theme-brand focus border */
+  background-color: var(--bg-slate-100) !important;
+  box-shadow: 0 0 10px var(--brand-light) !important;
 }
 
 .dark input::placeholder {
-  color: #475569 !important;
+  color: rgba(255, 255, 255, 0.35) !important;
 }
 
-/* Sidebar lists hover effect in dark mode */
+
+/* Secondary Buttons & Interactive items - Prevent flat black-on-black blending! */
+.dark button.bg-slate-100,
+.dark .bg-slate-100 button,
+.dark button.bg-white,
+.dark a.bg-slate-100,
+.dark a.bg-white,
+.dark .bg-slate-100:not(input):not(select):not(textarea) {
+  background-color: var(--bg-slate-50) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark button.bg-slate-100:hover,
+.dark button.bg-white:hover,
+.dark a.bg-slate-100:hover,
+.dark a.bg-white:hover,
+.dark .bg-slate-100:not(input):not(select):not(textarea):hover {
+  background-color: var(--bg-slate-100) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+
+/* Hover overrides for general utility layouts */
 .dark .hover\:bg-slate-50:hover {
-  background-color: rgba(30, 41, 59, 0.5) !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
   color: #ffffff !important;
 }
 
@@ -250,72 +550,168 @@ a, button, input, select, textarea {
   color: #ffffff !important;
 }
 
+.dark .hover\:bg-slate-100:hover {
+  background-color: #3A4556 !important;
+  color: #ffffff !important;
+}
+
 /* Drawer / Modal content in dark mode */
 .dark .bg-white.rounded-3xl.p-6.shadow-2xl {
-  background-color: #0f172a !important;
-  border-color: rgba(51, 65, 85, 0.5) !important;
+  background-color: #1A202C !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
 }
 
 .dark .bg-slate-50.p-4.border.border-slate-100 {
-  background-color: #090d16 !important;
-  border-color: rgba(51, 65, 85, 0.3) !important;
+  background-color: #2D3748 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-/* Status Badges & Pills styling in Dark Mode */
+/* Glowing Neon Status Badges & Action Buttons in Dark Mode */
 .dark .bg-emerald-50 {
-  background-color: rgba(16, 185, 129, 0.15) !important;
-  color: #34d399 !important;
-  border-color: rgba(16, 185, 129, 0.2) !important;
+  background-color: rgba(16, 185, 129, 0.18) !important;
+  color: #4ade80 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+.dark .text-emerald-600 {
+  color: #4ade80 !important;
+}
+.dark .bg-emerald-600 {
+  background-color: #10b981 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+}
+.dark .bg-emerald-600:hover {
+  background-color: #34d399 !important;
+  box-shadow: 0 6px 18px rgba(52, 211, 153, 0.5) !important;
 }
 
 .dark .bg-red-50 {
-  background-color: rgba(41, 182, 246, 0.15) !important;
-  color: #81d4fa !important;
-  border-color: rgba(41, 182, 246, 0.2) !important;
+  background-color: var(--brand-light) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border-premium) !important;
+}
+.dark .text-red-500,
+.dark .text-red-600,
+.dark .text-red-650,
+.dark .text-red-700,
+.dark .text-red-800 {
+  color: var(--brand-hover) !important;
+}
+.dark .text-red-900 {
+  color: var(--foreground) !important;
+}
+.dark .bg-red-600, .dark .bg-red-650 {
+  background-color: var(--brand-primary) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px var(--border-premium) !important;
+}
+.dark .bg-red-600:hover, .dark .bg-red-650:hover {
+  background-color: var(--brand-hover) !important;
+  box-shadow: 0 6px 18px var(--border-premium) !important;
 }
 
+
 .dark .bg-blue-50 {
-  background-color: rgba(59, 130, 246, 0.15) !important;
+  background-color: rgba(59, 130, 246, 0.18) !important;
   color: #60a5fa !important;
-  border-color: rgba(59, 130, 246, 0.2) !important;
+  border: 1px solid rgba(59, 130, 246, 0.35) !important;
 }
 
 .dark .bg-amber-50 {
-  background-color: rgba(245, 158, 11, 0.15) !important;
+  background-color: rgba(245, 158, 11, 0.18) !important;
   color: #fbbf24 !important;
-  border-color: rgba(245, 158, 11, 0.2) !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+.dark .text-amber-600 {
+  color: #fbbf24 !important;
+}
+.dark .bg-amber-600 {
+  background-color: #f59e0b !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important;
+}
+.dark .bg-amber-600:hover {
+  background-color: #fbbf24 !important;
+  box-shadow: 0 6px 18px rgba(251, 191, 36, 0.5) !important;
 }
 
 .dark .bg-purple-50 {
-  background-color: rgba(139, 92, 246, 0.15) !important;
-  color: #a78bfa !important;
-  border-color: rgba(139, 92, 246, 0.2) !important;
+  background-color: rgba(139, 92, 246, 0.18) !important;
+  color: #c084fc !important;
+  border: 1px solid rgba(139, 92, 246, 0.35) !important;
 }
 
 /* Tables header & hover styling in Dark Mode */
 .dark thead tr, .dark tr.bg-slate-800 {
-  background-color: #1e293b !important;
-  color: #f1f5f9 !important;
+  background-color: #2D3748 !important;
+  color: #ffffff !important;
 }
 
 .dark tbody tr {
-  border-color: rgba(51, 65, 85, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 .dark tbody tr:hover {
-  background-color: rgba(30, 41, 59, 0.3) !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 /* Scrollbar styling inside dark mode */
 .dark ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: #4A5568;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #2D3748;
   border-radius: 4px;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #1A202C;
+}
+
+/* ======================================================== */
+/* ================ HIGH CONTRAST DARK OVERRIDES ============ */
+/* ======================================================== */
+
+/* Sidebar Active Item Premium Refinements */
+aside a.text-red-600.bg-red-50 {
+  background-color: var(--brand-light) !important;
+  color: var(--foreground) !important; /* Force high-contrast crisp text (white/sage-white in dark mode, charcoal in light mode!) */
+  border-left: 4px solid var(--brand-primary) !important;
+  font-weight: 800 !important;
+  box-shadow: inset 2px 0 8px var(--brand-light) !important;
+}
+
+aside a.text-red-600.bg-red-50 span {
+  color: var(--brand-primary) !important; /* Keep the icon in the brand accent color! */
+}
+
+/* Escaped opacity slate-50/100 overrides to prevent fainted washed out cards */
+.dark .bg-slate-50\/70,
+.dark .bg-slate-50\/60,
+.dark .bg-slate-50\/50 {
+  background-color: var(--bg-slate-50) !important; /* Dynamic theme offset */
+  color: #ffffff !important;
+}
+
+.dark .bg-slate-50\/40,
+.dark .bg-slate-50\/30,
+.dark .bg-slate-50\/20,
+.dark .bg-slate-50\/15,
+.dark .bg-slate-50\/10 {
+  background-color: var(--brand-light) !important;
+}
+
+
+.dark .bg-slate-100\/80,
+.dark .bg-slate-100\/50,
+.dark .bg-slate-100\/30,
+.dark .bg-slate-100\/20,
+.dark .bg-slate-100\/10 {
+  background-color: rgba(37, 45, 58, 0.6) !important;
+}
+
+.dark .bg-slate-200 {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
 }

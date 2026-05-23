@@ -27,4 +27,9 @@ export class KunjunganController {
   findOne(@Param('id') id: string) {
     return this.kunjunganService.findOne(id);
   }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateKunjunganDto: any) {
+    return this.kunjunganService.update(id, updateKunjunganDto);
+  }
 }

@@ -32,7 +32,11 @@ export class ActivityLogInterceptor implements NestInterceptor {
               const resolved = await this.authService.validateSession(token);
               if (resolved) {
                 session = resolved;
-                user = resolved.pegawai;
+                user = {
+                  ...resolved.user,
+                  nama_lengkap: resolved.user.pegawai?.nama_lengkap || '',
+                  id_pegawai: resolved.user.pegawai?.id_pegawai || resolved.user.id_user,
+                };
               }
             } catch (err) {
               console.error('Dynamic session resolution failed in interceptor:', err.message);

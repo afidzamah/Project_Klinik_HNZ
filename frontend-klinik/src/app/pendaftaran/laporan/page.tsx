@@ -5,11 +5,19 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import MasterLayout from "@/components/MasterLayout";
 
+const formatLocalDate = (dateInput?: string | Date) => {
+  const d = dateInput ? new Date(dateInput) : new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function LaporanPasienLengkap() {
   const [trackingData, setTrackingData] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [filterDate, setFilterDate] = useState<string>(
-    new Date().toISOString().split("T")[0],
+    formatLocalDate(),
   );
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -55,7 +63,6 @@ export default function LaporanPasienLengkap() {
   };
 
   // Logika Filter Berlapis Data Table
-  // 🌟 PERBAIKAN: Gunakan validasi Array.isArray sebelum mengeksekusi .filter
   const dataTerfilter = Array.isArray(trackingData)
     ? trackingData.filter((k) => {
         const query = searchQuery.toLowerCase();
@@ -66,7 +73,7 @@ export default function LaporanPasienLengkap() {
           k.pasien?.nik?.toLowerCase().includes(query);
 
         const tglKunjungan = k.created_at
-          ? new Date(k.created_at).toISOString().split("T")[0]
+          ? formatLocalDate(k.created_at)
           : "";
         const cocokTanggal = tglKunjungan === filterDate;
 
@@ -160,6 +167,8 @@ export default function LaporanPasienLengkap() {
                   const jamDokter =
                     k.pemeriksaan_dokter?.[0]?.created_at || null;
 
+                  const isKunjunganBatal = k.status_kunjungan === 'Batal' || k.antrean?.some((a: any) => a.status_panggil === 'Batal');
+
                   return (
                     <tr
                       key={k.id_kunjungan}
@@ -172,12 +181,49 @@ export default function LaporanPasienLengkap() {
                         {k.pasien?.no_rm}
                       </td>
                       <td className="p-3">
-                        <p className="font-bold text-slate-900 text-sm">
-                          {k.pasien?.nama_lengkap}
-                        </p>
-                        <p className="font-mono text-[10px] text-slate-400">
-                          NIK: {k.pasien?.nik}
-                        </p>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-bold text-slate-900 text-sm">
+                              {k.pasien?.nama_lengkap}
+                            </p>
+                            {isKunjunganBatal ? (
+                              <span className="bg-rose-100 text-rose-700 text-[9px] font-black px-2 py-0.5 rounded-md border border-rose-200">
+                                ❌ Batal
+                              </span>
+                            ) : k.status_kunjungan === 'Selesai Perawat' ? (
+                              <span className="bg-emerald-100 text-emerald-800 text-[9px] font-black px-2 py-0.5 rounded-md border border-emerald-200">
+                                🟢 Selesai Perawat
+                              </span>
+                            ) : jamDokter ? (
+                              <span className="bg-blue-100 text-blue-800 text-[9px] font-black px-2 py-0.5 rounded-md border border-blue-200">
+                                🔵 Selesai Dokter
+                              </span>
+                            ) : (
+                              <span className="bg-amber-100 text-amber-800 text-[9px] font-black px-2 py-0.5 rounded-md border border-amber-200 animate-pulse">
+                                ⏳ Antre Poli
+                              </span>
+                            )}
+                          </div>
+                          <p className="font-mono text-[10px] text-slate-400">
+                            NIK: {k.pasien?.nik}
+                          </p>
+                          
+                          {/* 💳 METODE BAYAR & RUJUKAN */}
+                          <div className="flex gap-1.5 flex-wrap mt-1 text-[9px] font-bold">
+                            {k.cara_bayar && (
+                              <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded-md border border-slate-200">
+                                💳 {k.cara_bayar.nama_cara_bayar}
+                                {k.penjamin ? ` (${k.penjamin.nama_penjamin})` : ''}
+                              </span>
+                            )}
+                            {k.asal_rujukan && (
+                              <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded-md border border-slate-200">
+                                📥 {k.asal_rujukan.nama_asal_rujukan}
+                                {k.detail_asal_rujukan ? ` (${k.detail_asal_rujukan})` : ''}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </td>
                       <td className="p-3 text-slate-500 space-y-0.5">
                         <p>
@@ -204,12 +250,23 @@ export default function LaporanPasienLengkap() {
 
                       {/* POS TIME LOG 3: NURSE STATION */}
                       <td className="p-3 text-center font-mono bg-slate-50/50">
-                        {jamPerawat ? (
-                          <span className="text-green-700 font-bold bg-green-50 px-2 py-1 rounded-lg border border-green-100">
-                            {formatJam(jamPerawat)}
+                        {isKunjunganBatal ? (
+                          <span className="text-rose-700 font-extrabold bg-rose-50 px-2.5 py-1.5 rounded-lg border border-rose-100 block">
+                            ❌ Dibatalkan
                           </span>
+                        ) : k.status_kunjungan === 'Selesai Perawat' || jamPerawat ? (
+                          <div className="flex flex-col items-center gap-1.5 justify-center">
+                            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-1 rounded-lg border border-emerald-200 shadow-sm flex items-center gap-0.5 shrink-0">
+                              ✓ Selesai Pelayanan
+                            </span>
+                            {jamPerawat && (
+                              <span className="text-emerald-700 font-black font-mono text-[10px]">
+                                {formatJam(jamPerawat)}
+                              </span>
+                            )}
+                          </div>
                         ) : (
-                          <span className="text-amber-600 font-bold bg-amber-50 px-2 py-1 rounded-lg border border-amber-100 animate-pulse">
+                          <span className="text-amber-600 font-bold bg-amber-50 px-2 py-1 rounded-lg border border-amber-100 animate-pulse block">
                             ⏳ Antre Poli
                           </span>
                         )}
@@ -217,7 +274,11 @@ export default function LaporanPasienLengkap() {
 
                       {/* POS TIME LOG 4: DOCTOR CONSULTATION */}
                       <td className="p-3 text-center font-mono bg-red-50/20">
-                        {jamDokter ? (
+                        {isKunjunganBatal ? (
+                          <span className="text-rose-700 font-extrabold bg-rose-50 px-2.5 py-1.5 rounded-lg border border-rose-100 block">
+                            ❌ Dibatalkan
+                          </span>
+                        ) : jamDokter ? (
                           <span className="text-blue-700 font-bold bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
                             {formatJam(jamDokter)}
                           </span>

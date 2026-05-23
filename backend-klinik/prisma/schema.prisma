@@ -55,6 +55,13 @@ model kunjungan {
   status_kunjungan      String?               @db.VarChar(20)
   created_at            DateTime?             @default(now()) @db.Timestamp(6)
   no_kunjungan          String?               @db.VarChar(20)
+  
+  // -- TAMBAHAN PEMBAYARAN & RUJUKAN --
+  id_cara_bayar         String?               @db.Uuid
+  id_penjamin           String?               @db.Uuid
+  id_asal_rujukan       String?               @db.Uuid
+  detail_asal_rujukan   String?               @db.Text
+
   antrean               antrean[]
   asesmen_keperawatan   asesmen_keperawatan[]
   diagnosis_kunjungan   diagnosis_kunjungan[]
@@ -62,6 +69,10 @@ model kunjungan {
   pemeriksaan_dokter    pemeriksaan_dokter[]
   resep                 resep[]
   tagihan               tagihan[]
+
+  cara_bayar            master_cara_bayar?    @relation(fields: [id_cara_bayar], references: [id_cara_bayar], onDelete: NoAction, onUpdate: NoAction)
+  penjamin              master_penjamin?      @relation(fields: [id_penjamin], references: [id_penjamin], onDelete: NoAction, onUpdate: NoAction)
+  asal_rujukan          master_asal_rujukan?  @relation(fields: [id_asal_rujukan], references: [id_asal_rujukan], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model pasien {
@@ -143,14 +154,20 @@ model tagihan {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model tagihan_detail {
-  id_tagihan_detail String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  id_tagihan        String?  @db.Uuid
-  item_layanan      String?  @db.VarChar(255)
-  kategori_biaya    String?  @db.VarChar(50)
-  harga_satuan      Decimal? @default(0) @db.Decimal(15, 2)
-  kuantitas         Int?     @default(1)
-  subtotal          Decimal? @default(0) @db.Decimal(15, 2)
-  tagihan           tagihan? @relation(fields: [id_tagihan], references: [id_tagihan], onDelete: Cascade, onUpdate: NoAction)
+  id_tagihan_detail       String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_tagihan              String?                   @db.Uuid
+  id_tindakan             String?                   @db.Uuid
+  id_resep_item           String?                   @db.Uuid
+  item_layanan            String?                   @db.VarChar(255)
+  kategori_biaya          String?                   @db.VarChar(50)
+  harga_satuan            Decimal?                  @default(0) @db.Decimal(15, 2)
+  kuantitas               Int?                      @default(1)
+  subtotal                Decimal?                  @default(0) @db.Decimal(15, 2)
+  created_at              DateTime?                 @default(now()) @db.Timestamp(6)
+
+  tagihan                 tagihan?                  @relation(fields: [id_tagihan], references: [id_tagihan], onDelete: Cascade, onUpdate: NoAction)
+  master_tindakan         master_tindakan?          @relation(fields: [id_tindakan], references: [id_tindakan], onDelete: SetNull, onUpdate: NoAction)
+  tagihan_detail_komponen tagihan_detail_komponen[]
 }
 
 model master_dokter {
@@ -160,6 +177,7 @@ model master_dokter {
   sip_dokter        String             @unique @db.VarChar(50)
   status_aktif      Boolean?           @default(true)
   master_poliklinik master_poliklinik? @relation(fields: [id_poli], references: [id_poli])
+  jadwal_dokter     jadwal_dokter[]
 }
 
 model master_poliklinik {
@@ -167,6 +185,7 @@ model master_poliklinik {
   nama_poli     String          @db.VarChar(100)
   lokasi_gedung String?         @db.VarChar(100)
   master_dokter master_dokter[]
+  jadwal_dokter jadwal_dokter[]
 }
 
 // ==========================================
@@ -217,32 +236,42 @@ model master_role {
   kode_role   String    @unique @db.VarChar(50) // "pendaftaran", "dokter", "perawat", "farmasi", "superadmin"
   nama_role   String    @db.VarChar(100)
   menu_akses  Json      @default("[]")          // e.g. ["/pendaftaran", "/kiosk"]
-  pegawai     pegawai[]
+  user        user[]
 }
 
-model pegawai {
-  id_pegawai        String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+model user {
+  id_user           String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   username          String          @unique @db.VarChar(50)
   password          String          @db.VarChar(255)
-  nama_lengkap      String          @db.VarChar(100)
   role              String          @db.VarChar(50) // Fallback role code
   id_role           String?         @db.Uuid
   master_role       master_role?    @relation(fields: [id_role], references: [id_role])
   status_aktif      Boolean         @default(true)
   status_verifikasi String          @default("PENDING") // "PENDING", "DISETUJUI", "DITOLAK"
   created_at        DateTime        @default(now()) @db.Timestamp(6)
+  pegawai           pegawai?
   sesi_pegawai      sesi_pegawai[]
+}
+
+model pegawai {
+  id_pegawai        String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_lengkap      String          @db.VarChar(100)
+  no_kontak         String?         @db.VarChar(20)
+  email             String?         @db.VarChar(100)
+  id_user           String?         @unique @db.Uuid
+  user              user?           @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
+  created_at        DateTime        @default(now()) @db.Timestamp(6)
 }
 
 model sesi_pegawai {
   id_sesi       String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  id_pegawai    String          @db.Uuid
+  id_user       String          @db.Uuid
   token         String          @unique @db.VarChar(255)
   waktu_login   DateTime        @default(now()) @db.Timestamp(6)
   waktu_logout  DateTime?       @db.Timestamp(6)
   ip_address    String?         @db.VarChar(45)
   user_agent    String?         @db.Text
-  pegawai       pegawai         @relation(fields: [id_pegawai], references: [id_pegawai], onDelete: Cascade)
+  user          user            @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
   log_aktivitas log_aktivitas[]
 }
 
@@ -253,4 +282,121 @@ model log_aktivitas {
   deskripsi    String       @db.Text         // e.g. "Mendaftarkan pasien baru: Budi"
   waktu_aksi   DateTime     @default(now()) @db.Timestamp(6)
   sesi         sesi_pegawai @relation(fields: [id_sesi], references: [id_sesi], onDelete: Cascade)
+}
+
+// ==========================================
+// MODEL MASTER PEMBAYARAN & ASAL RUJUKAN
+// ==========================================
+
+model master_cara_bayar {
+  id_cara_bayar         String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_cara_bayar       String                  @db.VarChar(50) @unique // "Umum Pribadi", "Asuransi", "Perusahaan", "BPJS"
+  penjamin              master_penjamin[]
+  kunjungan             kunjungan[]
+  master_harga_tindakan master_harga_tindakan[]
+}
+
+model master_penjamin {
+  id_penjamin     String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_penjamin   String            @db.VarChar(100)
+  id_cara_bayar   String            @db.Uuid
+  cara_bayar      master_cara_bayar @relation(fields: [id_cara_bayar], references: [id_cara_bayar], onDelete: Cascade)
+  kunjungan       kunjungan[]
+}
+
+model master_asal_rujukan {
+  id_asal_rujukan   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_asal_rujukan String      @db.VarChar(50) @unique // "Datang Sendiri", "Klinik / Rumah Sakit", "Internal"
+  kunjungan         kunjungan[]
+}
+
+model jadwal_dokter {
+  id_jadwal         String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hari              String            @db.VarChar(15) // "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"
+  id_poli           String            @db.Uuid
+  id_dokter         String            @db.Uuid
+  jam_mulai         String            @db.VarChar(10) // HH:mm
+  jam_selesai       String            @db.VarChar(10) // HH:mm
+  kuota             Int
+  created_at        DateTime?         @default(now()) @db.Timestamp(6)
+  master_poliklinik master_poliklinik @relation(fields: [id_poli], references: [id_poli], onDelete: Cascade, onUpdate: NoAction)
+  master_dokter     master_dokter     @relation(fields: [id_dokter], references: [id_dokter], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model pengaturan_aplikasi {
+  id_pengaturan String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kunci         String    @unique @db.VarChar(100)
+  nilai         String    @db.Text
+  keterangan    String?   @db.VarChar(255)
+  created_at    DateTime? @default(now()) @db.Timestamp(6)
+  updated_at    DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model master_kelas {
+  id_kelas              String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_kelas            String                  @db.VarChar(50) @unique
+  status_aktif          Boolean                 @default(true)
+  created_at            DateTime?               @default(now()) @db.Timestamp(6)
+  master_harga_tindakan master_harga_tindakan[]
+}
+
+model master_tindakan {
+  id_tindakan           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_tindakan         String                  @db.VarChar(150)
+  kategori_tindakan     String                  @db.VarChar(100)
+  status_aktif          Boolean                 @default(true)
+  created_at            DateTime?               @default(now()) @db.Timestamp(6)
+  master_harga_tindakan master_harga_tindakan[]
+  tagihan_detail        tagihan_detail[]
+}
+
+model master_komponen_tarif {
+  id_komponen                    String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_komponen                  String                           @db.VarChar(100) @unique
+  keterangan                     String?                          @db.VarChar(255)
+  status_aktif                   Boolean                          @default(true)
+  created_at                     DateTime?                        @default(now()) @db.Timestamp(6)
+  master_harga_tindakan_komponen master_harga_tindakan_komponen[]
+  tagihan_detail_komponen        tagihan_detail_komponen[]
+}
+
+model master_harga_tindakan {
+  id_harga                       String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_tindakan                    String                           @db.Uuid
+  id_kelas                       String                           @db.Uuid
+  id_cara_bayar                  String                           @db.Uuid
+  status_aktif                   Boolean                          @default(true)
+  total_tarif                    Decimal                          @default(0) @db.Decimal(15, 2)
+  created_at                     DateTime?                        @default(now()) @db.Timestamp(6)
+  updated_at                     DateTime?                        @default(now()) @db.Timestamp(6)
+
+  master_tindakan                master_tindakan                  @relation(fields: [id_tindakan], references: [id_tindakan], onDelete: Cascade, onUpdate: NoAction)
+  master_kelas                   master_kelas                     @relation(fields: [id_kelas], references: [id_kelas], onDelete: Cascade, onUpdate: NoAction)
+  master_cara_bayar              master_cara_bayar                @relation(fields: [id_cara_bayar], references: [id_cara_bayar], onDelete: Cascade, onUpdate: NoAction)
+  master_harga_tindakan_komponen master_harga_tindakan_komponen[]
+
+  @@unique([id_tindakan, id_kelas, id_cara_bayar])
+}
+
+model master_harga_tindakan_komponen {
+  id_harga_detail       String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_harga              String                @db.Uuid
+  id_komponen           String                @db.Uuid
+  nilai_tarif           Decimal               @default(0) @db.Decimal(15, 2)
+
+  master_harga_tindakan master_harga_tindakan @relation(fields: [id_harga], references: [id_harga], onDelete: Cascade, onUpdate: NoAction)
+  master_komponen_tarif master_komponen_tarif @relation(fields: [id_komponen], references: [id_komponen], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([id_harga, id_komponen])
+}
+
+model tagihan_detail_komponen {
+  id_tagihan_detail_komponen String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_tagihan_detail          String         @db.Uuid
+  id_komponen                String?        @db.Uuid
+  nama_komponen              String         @db.VarChar(100)
+  nilai_tarif                Decimal        @default(0) @db.Decimal(15, 2)
+
+  tagihan_detail             tagihan_detail @relation(fields: [id_tagihan_detail], references: [id_tagihan_detail], onDelete: Cascade, onUpdate: NoAction)
+  master_komponen_tarif      master_komponen_tarif? @relation(fields: [id_komponen], references: [id_komponen], onDelete: SetNull, onUpdate: NoAction)
 }

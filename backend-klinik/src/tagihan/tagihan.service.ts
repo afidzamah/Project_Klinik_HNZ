@@ -63,11 +63,60 @@ export class TagihanService {
     return this.prisma.tagihan.findMany({
       include: {
         kunjungan: { include: { pasien: true } }, 
-        tagihan_detail: true, 
+        tagihan_detail: {
+          include: {
+            tagihan_detail_komponen: true,
+          },
+        }, 
       },
       orderBy: {
-        id_tagihan: 'desc', 
-      }
+        no_invoice: 'desc', 
+      },
     });
+  }
+
+  // 3. Fungsi Membayar/Melunasi Tagihan Pasien
+  async bayar(
+    id: string,
+    data: { metode_pembayaran: string; total_diskon?: number; total_netto?: number }
+  ) {
+    const tagihan = await this.prisma.tagihan.findUnique({
+      where: { id_tagihan: id },
+    });
+
+    if (!tagihan) {
+      throw new NotFoundException('Tagihan tidak ditemukan!');
+    }
+
+    const totalDiskon = data.total_diskon !== undefined ? Number(data.total_diskon) : Number(tagihan.total_diskon || 0);
+    const totalNetto = data.total_netto !== undefined ? Number(data.total_netto) : (Number(tagihan.total_bruto || 0) - totalDiskon);
+
+    const tagihanTerbayar = await this.prisma.tagihan.update({
+      where: { id_tagihan: id },
+      data: {
+        status_bayar: 'Lunas',
+        metode_pembayaran: data.metode_pembayaran,
+        total_diskon: totalDiskon,
+        total_netto: totalNetto,
+        waktu_bayar: new Date(),
+      },
+      include: {
+        tagihan_detail: {
+          include: {
+            tagihan_detail_komponen: true,
+          },
+        },
+      },
+    });
+
+    // Otomatis mengubah status Kunjungan menjadi "Selesai" jika ada
+    if (tagihan.id_kunjungan) {
+      await this.prisma.kunjungan.update({
+        where: { id_kunjungan: tagihan.id_kunjungan },
+        data: { status_kunjungan: 'Selesai' },
+      });
+    }
+
+    return tagihanTerbayar;
   }
 }

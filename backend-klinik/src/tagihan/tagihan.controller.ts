@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
 import { TagihanService } from './tagihan.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CreateTagihanDto } from './dto/create-tagihan.dto';
@@ -18,5 +18,14 @@ export class TagihanController {
   @ApiOperation({ summary: 'Lihat Seluruh Riwayat Transaksi' })
   findAll() {
     return this.tagihanService.findAll();
+  }
+
+  @Patch(':id/bayar')
+  @ApiOperation({ summary: 'Kasir: Selesaikan & Melunasi Tagihan' })
+  bayar(
+    @Param('id') id: string,
+    @Body() body: { metode_pembayaran: string; total_diskon?: number; total_netto?: number }
+  ) {
+    return this.tagihanService.bayar(id, body);
   }
 }

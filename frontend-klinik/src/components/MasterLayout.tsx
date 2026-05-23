@@ -10,9 +10,13 @@ const sidebarItems = [
   { path: '/kiosk', icon: '🖥️', label: 'Kiosk Mandiri' },
   { path: '/pendaftaran', icon: '📋', label: 'Pendaftaran' },
   { path: '/pendaftaran/laporan', icon: '📈', label: 'Laporan Pendaftaran' },
+  { path: '/jadwal-dokter', icon: '📅', label: 'Jadwal Dokter' },
+  { path: '/pengaturan', icon: '⚙️', label: 'Setting Fixed Data' },
+  { path: '/tarif', icon: '💰', label: 'Input Tarif Tindakan' },
   { path: '/nurse-station', icon: '🩺', label: 'Nurse Station' },
   { path: '/dokter', icon: '👨‍⚕️', label: 'Pemeriksaan Dokter' },
-  { path: '/farmasi', icon: '💊', label: 'Farmasi & Kasir' },
+  { path: '/farmasi', icon: '💊', label: 'Apotek & Farmasi' },
+  { path: '/kasir', icon: '💵', label: 'Kasir & Billing Pasien' },
   { path: '/monitoring', icon: '🖥️', label: 'Pengawasan Sesi' },
   { path: '/superadmin', icon: '⚙️', label: 'Panel Superadmin' },
 ];
@@ -35,39 +39,59 @@ export default function MasterLayout({ children }: { children: React.ReactNode }
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Theme State
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  // 7 Presets Clinical Theme Engine
+  const themesList = [
+    { id: 'warm-white', label: 'Warm White', color: '#F8F5F0', icon: '☀️', isDark: false },
+    { id: 'dark-slate', label: 'Dark Slate', color: '#4A5568', icon: '🌙', isDark: true },
+    { id: 'pale-fern', label: 'Pale Fern', color: '#C4DDD0', icon: '🌿', isDark: false },
+    { id: 'mint-mist', label: 'Mint Mist', color: '#B8EDF0', icon: '🍃', isDark: false },
+    { id: 'lilac-soft', label: 'Lilac Soft', color: '#B49ED8', icon: '🪻', isDark: false },
+    { id: 'admin-blue', label: 'Admin Blue', color: '#2563A8', icon: '💼', isDark: false },
+    { id: 'blush-cloud', label: 'Blush Cloud', color: '#FFE4EF', icon: '🌸', isDark: false },
+    { id: 'pink-soft', label: 'Pink Soft', color: '#F9A8D4', icon: '💗', isDark: false },
+    { id: 'sunny-accent', label: 'Sunny Accent', color: '#FBBF24', icon: '🌻', isDark: false },
+    { id: 'blood-red', label: 'Blood Red', color: '#981818', icon: '🍒', isDark: false },
+    { id: 'terracotta', label: 'Terracotta', color: '#C05A30', icon: '🏺', isDark: false },
+    { id: 'cozy-lavender', label: 'Cozy Lavender', color: '#8B6BBE', icon: '💜', isDark: false },
+    { id: 'deep-bark', label: 'Deep Bark', color: '#5A9A72', icon: '🌲', isDark: true },
+  ];
 
-  // Load theme & sidebar state from localStorage after mount to prevent Next.js server-client mismatch
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const [activeTheme, setActiveTheme] = useState<string>('warm-white');
+  const [isThemePickerOpen, setIsThemePickerOpen] = useState(false);
+
+  // Apply theme preset class to html root
+  const applyThemePreset = (presetId: string) => {
+    const root = document.documentElement;
     
-    if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-      setTheme('dark');
-      document.documentElement.classList.add('dark');
-    } else {
-      setTheme('light');
-      document.documentElement.classList.remove('dark');
+    // Remove all previous theme classes
+    themesList.forEach((t) => {
+      root.classList.remove(`theme-${t.id}`);
+    });
+    root.classList.remove('dark');
+
+    // Add new preset class
+    root.classList.add(`theme-${presetId}`);
+    
+    // If dark slate, add .dark class for general utility support
+    const preset = themesList.find(t => t.id === presetId);
+    if (preset?.isDark) {
+      root.classList.add('dark');
     }
+
+    setActiveTheme(presetId);
+    localStorage.setItem('hnz_theme_preset', presetId);
+  };
+
+  // Load theme preset & sidebar state from localStorage after mount
+  useEffect(() => {
+    const savedPreset = localStorage.getItem('hnz_theme_preset') || 'warm-white';
+    applyThemePreset(savedPreset);
 
     const saved = localStorage.getItem('sidebar_collapsed');
     if (saved !== null) {
       setIsSidebarCollapsed(saved === 'true');
     }
   }, []);
-
-  const toggleTheme = () => {
-    if (theme === 'light') {
-      setTheme('dark');
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      setTheme('light');
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  };
 
   const toggleSidebar = () => {
     const nextState = !isSidebarCollapsed;
@@ -245,7 +269,7 @@ export default function MasterLayout({ children }: { children: React.ReactNode }
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800 antialiased">
+    <div className="min-h-screen bg-background flex flex-col font-sans text-slate-800 antialiased">
 
       {/* ======================== HEADER CORE ======================== */}
       <header className="bg-white border-b border-slate-200 premium-border-b sticky top-0 z-50 shadow-sm">
@@ -296,14 +320,61 @@ export default function MasterLayout({ children }: { children: React.ReactNode }
           {/* SISI KANAN: Status Petugas & Riwayat Sesi */}
           <div className="flex items-center space-x-3">
             
-            {/* Dark/Light Theme Toggle Switch */}
-            <button
-              onClick={toggleTheme}
-              title={theme === 'light' ? 'Aktifkan Mode Gelap' : 'Aktifkan Mode Terang'}
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 hover:bg-red-50 border border-slate-200 hover:border-red-200 text-slate-600 hover:text-red-600 shadow-sm transition-all cursor-pointer active:scale-95 duration-200 select-none text-base"
-            >
-              {theme === 'light' ? '🌙' : '☀️'}
-            </button>
+            {/* 7-Preset Clinical Theme Selector Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setIsThemePickerOpen(!isThemePickerOpen)}
+                title="Pilih Preset Tema Klinik"
+                className="flex h-10 px-3 items-center gap-2 rounded-xl bg-slate-100 dark:bg-[#1A202C] border border-slate-200 dark:border-white/10 hover:border-red-200 hover:bg-red-50 text-xs font-black text-slate-700 dark:text-slate-200 shadow-sm transition-all cursor-pointer active:scale-95 duration-200 select-none"
+              >
+                <span>{themesList.find(t => t.id === activeTheme)?.icon}</span>
+                <span className="hidden sm:inline">{themesList.find(t => t.id === activeTheme)?.label}</span>
+                <span className="text-[8px] text-slate-400">▼</span>
+              </button>
+
+              {isThemePickerOpen && (
+                <>
+                  {/* Invisible overlay to close dropdown */}
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setIsThemePickerOpen(false)}
+                  />
+                  {/* Floating Menu */}
+                  <div className="absolute right-0 mt-2.5 w-52 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1A202C] p-2.5 shadow-2xl z-50 animate-scale-up">
+                    <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest px-2.5 mb-2">Preset Tema Klinik</span>
+                    <div className="space-y-1">
+                      {themesList.map((preset) => {
+                        const isActive = activeTheme === preset.id;
+                        return (
+                          <button
+                            key={preset.id}
+                            onClick={() => {
+                              applyThemePreset(preset.id);
+                              setIsThemePickerOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between rounded-xl px-2.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                              isActive
+                                ? 'bg-red-50 dark:bg-slate-800 text-red-600 dark:text-white'
+                                : 'text-slate-650 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm">{preset.icon}</span>
+                              <span>{preset.label}</span>
+                            </div>
+                            {/* Color Pill */}
+                            <span 
+                              className="w-3.5 h-3.5 rounded-full border border-slate-200/80 dark:border-white/10 shadow-3xs" 
+                              style={{ backgroundColor: preset.color }}
+                            />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
 
             {/* Monitor Sesi Trigger (Premium Audit Icon) */}
             <button
@@ -363,7 +434,7 @@ export default function MasterLayout({ children }: { children: React.ReactNode }
                   href={item.path}
                   className={`group relative flex items-center rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all duration-250 ${
                     isActive 
-                      ? 'bg-gradient-to-r from-red-50 to-rose-50/30 text-red-600 font-bold border-l-4 border-red-600 pl-3 shadow-sm' 
+                      ? 'bg-red-50 text-red-600 font-bold border-l-4 border-red-600 pl-3 shadow-sm' 
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950 pl-4 hover:translate-x-1'
                   }`}
                 >

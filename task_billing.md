@@ -1,0 +1,21 @@
+# Checklist Implementasi Billing Pasien & Otomatisasi Pendaftaran
+
+- `[x]` Pembaruan Skema Database (Prisma)
+  - `[x]` Update model `tagihan_detail` di `schema.prisma` untuk menambahkan referensi tindakan, resep obat, dan komponen.
+  - `[x]` Buat model `tagihan_detail_komponen` di `schema.prisma`.
+  - `[x]` Tambahkan relasi balik di `master_tindakan` dan `master_komponen_tarif`.
+- `[x]` Sinkronisasi Database
+  - `[x]` Jalankan `npx prisma db push` untuk mensinkronisasi skema baru ke PostgreSQL.
+  - `[x]` Jalankan `npx prisma generate` untuk memperbarui Prisma Client.
+- `[x]` Implementasi Logic Backend (Kunjungan Service)
+  - `[x]` Modifikasi `KunjunganService.create` di `kunjungan.service.ts`.
+  - `[x]` Tambahkan fungsi otomatis pencarian master tindakan `Administrasi Pendaftaran` dan kelas `Rawat Jalan`.
+  - `[x]` Tambahkan pemuatan tarif otomatis dan breakdown komponen biaya berdasarkan metode pembayaran kunjungan.
+  - `[x]` Buat transaksi transaksional `prisma.$transaction` untuk menyimpan Kunjungan + Invoice Header (`tagihan`) + Invoice Detail (`tagihan_detail`) + Pecahan Komponen (`tagihan_detail_komponen`).
+- `[x]` Verifikasi Kompilasi & Jalannya Server
+  - `[x]` Pastikan server backend NestJS melakukan rekompilasi otomatis dengan sukses tanpa error.
+  - `[x]` Pastikan server frontend Next.js berjalan tanpa kendala tipe.
+- `[x]` Uji Coba Fungsional & Dokumentasi
+  - `[x]` Uji coba membuat pendaftaran pasien baru secara manual di UI.
+  - `[x]` Verifikasi database / halaman `/tarif` Tab 3 menunjukkan invoice `INV-YYMMDDXXXX` dengan total Rp 15.000 dan breakdown detail komponen yang sempurna.
+  - `[x]` Buat laporan walkthrough hasil implementasi di `walkthrough_billing.md`.

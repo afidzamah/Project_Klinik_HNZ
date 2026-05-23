@@ -42,7 +42,7 @@ export class AuthController {
   @Get('logs')
   @UseGuards(AuthGuard)
   async getLogs(@Req() req: any) {
-    return this.authService.getSessionLogs(req.user.id_pegawai);
+    return this.authService.getSessionLogs(req.user.id_user);
   }
 
   @Get('all-logs')

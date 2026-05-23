@@ -26,8 +26,23 @@ export class AntreanService {
     // Buat nomor urut baru (misal: 001, 002, 003)
     const nomorUrut = (jumlahAntreanHariIni + 1).toString().padStart(3, '0');
     
-    // Tentukan kode awalan (P = Poli, L = Loket)
-    const kodePrefix = tipe_antrean === 'Poli' ? 'P' : 'L'; 
+    // Tentukan kode awalan dinamis dari database
+    let settingKey = 'prefix_antrean_pendaftaran';
+    let fallbackPrefix = 'L';
+
+    if (tipe_antrean === 'Nurse') {
+      settingKey = 'prefix_antrean_nurse';
+      fallbackPrefix = 'N';
+    } else if (tipe_antrean === 'Poli') {
+      settingKey = 'prefix_antrean_dokter';
+      fallbackPrefix = 'P';
+    }
+
+    const setting = await this.prisma.pengaturan_aplikasi.findUnique({
+      where: { kunci: settingKey }
+    });
+
+    const kodePrefix = (setting?.nilai || fallbackPrefix).toUpperCase(); 
     const no_antrean_baru = `${kodePrefix}-${nomorUrut}`;
 
     // 2. Eksekusi Simpan ke Database PostgreSQL via Prisma
@@ -61,7 +76,15 @@ export class AntreanService {
       include: {
         kunjungan: {
           include: {
-            pasien: true,
+            pasien: {
+              include: {
+                jenis_alamat: true,
+                provinsi: true,
+                kabupaten: true,
+                kecamatan: true,
+                kelurahan: true,
+              },
+            },
             asesmen_keperawatan: true,
           },
         },
