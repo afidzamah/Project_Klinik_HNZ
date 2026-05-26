@@ -47,15 +47,17 @@ export default function KioskPage() {
     { id: 'dark-slate', label: 'Dark Slate', color: '#4A5568', icon: '🌙', isDark: true },
     { id: 'pale-fern', label: 'Pale Fern', color: '#C4DDD0', icon: '🌿', isDark: false },
     { id: 'mint-mist', label: 'Mint Mist', color: '#B8EDF0', icon: '🍃', isDark: false },
-    { id: 'lilac-soft', label: 'Lilac Soft', color: '#B49ED8', icon: '🪻', isDark: false },
-    { id: 'admin-blue', label: 'Admin Blue', color: '#2563A8', icon: '💼', isDark: false },
+    { id: 'lilac-soft', label: 'Lilac Morning', color: '#784FBE', icon: '🪻', isDark: false },
+    { id: 'ocean-deep', label: 'Ocean Deep', color: '#1A78C8', icon: '🌊', isDark: true },
     { id: 'blush-cloud', label: 'Blush Cloud', color: '#FFE4EF', icon: '🌸', isDark: false },
     { id: 'pink-soft', label: 'Pink Soft', color: '#F9A8D4', icon: '💗', isDark: false },
-    { id: 'sunny-accent', label: 'Sunny Accent', color: '#FBBF24', icon: '🌻', isDark: false },
-    { id: 'blood-red', label: 'Blood Red', color: '#981818', icon: '🍒', isDark: false },
-    { id: 'terracotta', label: 'Terracotta', color: '#C05A30', icon: '🏺', isDark: false },
+    { id: 'sunny-accent', label: 'Citrus Burst', color: '#E87818', icon: '🍊', isDark: false },
+    { id: 'blood-moon', label: 'Blood Moon', color: '#B82858', icon: '🌑', isDark: true },
+    { id: 'terracotta', label: 'Terracotta Dusk', color: '#C05A30', icon: '🏺', isDark: true },
     { id: 'cozy-lavender', label: 'Cozy Lavender', color: '#8B6BBE', icon: '💜', isDark: false },
     { id: 'deep-bark', label: 'Deep Bark', color: '#5A9A72', icon: '🌲', isDark: true },
+    { id: 'cosmic-nebula', label: 'Cosmic Nebula', color: '#6820C0', icon: '🔮', isDark: true },
+    { id: 'sky-minimal', label: 'Sky Minimal', color: '#2A7FD4', icon: '☁️', isDark: false },
   ];
 
   const [activeTheme, setActiveTheme] = useState<string>('dark-slate'); // Kiosk defaults to dark-slate for touch screen comfort

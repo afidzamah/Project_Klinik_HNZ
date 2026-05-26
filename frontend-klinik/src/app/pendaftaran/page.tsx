@@ -78,15 +78,16 @@ function SearchableSelect({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between rounded-xl border border-red-500/30 p-2.5 bg-red-50/10 text-red-900 font-bold outline-none text-xs text-left focus:ring-2 focus:ring-red-500 transition-all ${
-          disabled ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200' : 'cursor-pointer hover:bg-red-50/20'
+        className={`w-full flex items-center justify-between rounded-xl border border-brand-light p-2.5 bg-brand-light font-bold outline-none text-xs text-left ring-brand focus:ring-2 transition-all ${
+          disabled ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200' : 'cursor-pointer'
         }`}
+        style={{ color: disabled ? undefined : 'var(--foreground)' }}
       >
         <span className="truncate">
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <svg
-          className={`w-4 h-4 text-red-650 transition-transform duration-200 ml-2 shrink-0 ${
+          className={`w-4 h-4 text-brand transition-transform duration-200 ml-2 shrink-0 ${
             isOpen ? 'rotate-180' : ''
           }`}
           fill="none"
@@ -150,14 +151,14 @@ function SearchableSelect({
                     }}
                     className={`w-full text-left px-3 py-2 text-xs flex flex-col transition-colors border-l-2 ${
                       isSelected
-                        ? 'bg-red-50 text-red-900 border-red-605 font-bold'
+                        ? 'bg-brand-light border-brand font-bold'
                         : 'hover:bg-slate-50 text-slate-700 border-transparent font-semibold'
                     }`}
                   >
                     <span>{opt.label}</span>
                     {opt.sublabel && (
                       <span className={`text-[10px] mt-0.5 font-normal ${
-                        isSelected ? 'text-red-700/80' : 'text-slate-400'
+                        isSelected ? 'text-brand-hover' : 'text-slate-400'
                       }`}>
                         {opt.sublabel}
                       </span>
