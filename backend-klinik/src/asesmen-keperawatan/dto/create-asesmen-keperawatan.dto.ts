@@ -27,4 +27,10 @@ export class CreateAsesmenKeperawatanDto {
 
   @ApiProperty({ example: 20, description: 'Tingkat pernapasan per menit' })
   respiratory_rate: number;
+
+  @ApiProperty({ example: 'Udang', description: 'Alergi makanan', required: false })
+  alergi_makanan?: string;
+
+  @ApiProperty({ example: 'Penicillin', description: 'Alergi obat', required: false })
+  alergi_obat?: string;
 }

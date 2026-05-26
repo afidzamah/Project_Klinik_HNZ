@@ -30,6 +30,8 @@ model asesmen_keperawatan {
   tinggi_badan     Decimal?   @db.Decimal(5, 2)
   detak_jantung    Int?
   respiratory_rate Int?
+  alergi_makanan   String?
+  alergi_obat      String?
   waktu_periksa    DateTime?  @default(now()) @db.Timestamp(6)
   kunjungan        kunjungan? @relation(fields: [id_kunjungan], references: [id_kunjungan], onDelete: Cascade, onUpdate: NoAction)
 }

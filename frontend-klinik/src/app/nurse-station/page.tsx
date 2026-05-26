@@ -39,7 +39,12 @@ export default function NurseStationDashboard() {
     diastole: '',
     suhu_tubuh: '',
     berat_badan: '',
+    alergi_makanan: '',
+    alergi_obat: '',
   });
+
+  const [historyKunjungan, setHistoryKunjungan] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const [loading, setLoading] = useState(false);
 
@@ -106,10 +111,32 @@ export default function NurseStationDashboard() {
   };
 
   // FUNGSI 1: Memilih Pasien (Hanya melihat data, tidak memanggil)
+  const fetchPatientHistory = async (nik: string) => {
+    if (!nik) return;
+    setLoadingHistory(true);
+    try {
+      const res = await fetch(`${API_URL}/pasien/nik/${nik}`);
+      if (res.ok) {
+        const data = await res.json();
+        setHistoryKunjungan(Array.isArray(data.kunjungan) ? data.kunjungan : []);
+      }
+    } catch (err) {
+      console.error('Gagal mengambil riwayat kunjungan:', err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
   const handlePilihPasien = (antrean: any) => {
     setActiveAntrean(antrean);
     setActiveFormTab('ttv'); // Reset tab formulir ke TTV setiap kali pasien baru dipilih
     
+    if (antrean?.kunjungan?.pasien?.nik) {
+      fetchPatientHistory(antrean.kunjungan.pasien.nik);
+    } else {
+      setHistoryKunjungan([]);
+    }
+
     // Load saved triage data if it exists
     const savedTriage = antrean.kunjungan?.asesmen_keperawatan?.[0];
     if (savedTriage) {
@@ -119,6 +146,8 @@ export default function NurseStationDashboard() {
         diastole: savedTriage.diastole?.toString() || '',
         suhu_tubuh: savedTriage.suhu_tubuh?.toString() || '',
         berat_badan: savedTriage.berat_badan?.toString() || '',
+        alergi_makanan: savedTriage.alergi_makanan || '',
+        alergi_obat: savedTriage.alergi_obat || '',
       });
     } else {
       setFormTriage({
@@ -127,6 +156,8 @@ export default function NurseStationDashboard() {
         diastole: '',
         suhu_tubuh: '',
         berat_badan: '',
+        alergi_makanan: '',
+        alergi_obat: '',
       });
     }
   };
@@ -148,6 +179,36 @@ export default function NurseStationDashboard() {
     setActiveAntrean(antrean); // Otomatis aktifkan pasien ini di layar
     setActiveFormTab('ttv'); // Reset ke TTV
     
+    if (antrean?.kunjungan?.pasien?.nik) {
+      fetchPatientHistory(antrean.kunjungan.pasien.nik);
+    } else {
+      setHistoryKunjungan([]);
+    }
+
+    // Load saved triage data if it exists
+    const savedTriage = antrean.kunjungan?.asesmen_keperawatan?.[0];
+    if (savedTriage) {
+      setFormTriage({
+        keluhan_utama: savedTriage.keluhan_utama || '',
+        sistole: savedTriage.sistole?.toString() || '',
+        diastole: savedTriage.diastole?.toString() || '',
+        suhu_tubuh: savedTriage.suhu_tubuh?.toString() || '',
+        berat_badan: savedTriage.berat_badan?.toString() || '',
+        alergi_makanan: savedTriage.alergi_makanan || '',
+        alergi_obat: savedTriage.alergi_obat || '',
+      });
+    } else {
+      setFormTriage({
+        keluhan_utama: '',
+        sistole: '',
+        diastole: '',
+        suhu_tubuh: '',
+        berat_badan: '',
+        alergi_makanan: '',
+        alergi_obat: '',
+      });
+    }
+
     const nomorEja = antrean.no_antrean.split('').join(' ');
     const namaPasien = antrean.kunjungan?.pasien?.nama_lengkap || '';
     const teksPanggilan = `Nomor antrean, ${nomorEja}, atas nama pasien ${namaPasien}, silakan menuju ruang pemeriksaan awal perawat.`;
@@ -214,7 +275,8 @@ export default function NurseStationDashboard() {
 
       alert(`✅ Pelayanan Sukses!\nStatus pelayanan pasien ${antrean.kunjungan?.pasien?.nama_lengkap} berhasil diselesaikan dan diteruskan ke antrean dokter.`);
       
-      setFormTriage({ keluhan_utama: '', sistole: '', diastole: '', suhu_tubuh: '', berat_badan: '' });
+      setFormTriage({ keluhan_utama: '', sistole: '', diastole: '', suhu_tubuh: '', berat_badan: '', alergi_makanan: '', alergi_obat: '' });
+      setHistoryKunjungan([]);
       setActiveAntrean(null);
       setActiveFormTab('ttv');
       fetchAntreanPoli();
@@ -255,6 +317,8 @@ export default function NurseStationDashboard() {
           diastole: parseInt(formTriage.diastole),
           suhu_tubuh: parseFloat(formTriage.suhu_tubuh),
           berat_badan: parseFloat(formTriage.berat_badan),
+          alergi_makanan: formTriage.alergi_makanan,
+          alergi_obat: formTriage.alergi_obat,
         }),
       });
 
@@ -288,7 +352,7 @@ export default function NurseStationDashboard() {
 
       alert(`✅ Triage & Pelayanan Sukses!\nData rekam medis awal pasien ${activeAntrean.kunjungan?.pasien?.nama_lengkap} berhasil disimpan dan diteruskan ke antrean dokter.`);
       
-      setFormTriage({ keluhan_utama: '', sistole: '', diastole: '', suhu_tubuh: '', berat_badan: '' });
+      setFormTriage({ keluhan_utama: '', sistole: '', diastole: '', suhu_tubuh: '', berat_badan: '', alergi_makanan: '', alergi_obat: '' });
       setActiveAntrean(null);
       setActiveFormTab('ttv');
       fetchAntreanPoli(); 
@@ -317,8 +381,8 @@ export default function NurseStationDashboard() {
     <MasterLayout>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* PANEL KIRI: DAFTAR ANTREAN TRIAGE (PISAH KLIK & PANGGIL - LEBAR 2 KOLOM) */}
-        <aside className="lg:col-span-2 bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full min-h-[75vh]">
+        {/* PANEL KIRI: DAFTAR ANTREAN TRIAGE (PISAH KLIK & PANGGIL - LEBAR 3 KOLOM) */}
+        <aside className="lg:col-span-3 bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full min-h-[75vh]">
           
           <div className="flex flex-col mb-4 pb-4 border-b border-slate-100 gap-3">
             <div className="flex justify-between items-center">
@@ -484,8 +548,8 @@ export default function NurseStationDashboard() {
           </div>
         </aside>
 
-        {/* PANEL KANAN: KARTU IDENTITAS & CONTAINER FORM BERJENJANG (10 KOLOM) */}
-        <main className="lg:col-span-10 flex flex-col gap-6">
+        {/* PANEL TENGAH: KARTU IDENTITAS & CONTAINER FORM BERJENJANG (5 KOLOM) */}
+        <main className="lg:col-span-5 flex flex-col gap-6">
           {/* SECTION A: KARTU IDENTITAS PASIEN (MUNCUL JIKA PASIEN DIPILIH) */}
           {activeAntrean ? (
             <div className={`bg-white rounded-2xl p-3 px-4 shadow-sm border flex flex-col relative overflow-hidden transition-all ${
@@ -798,6 +862,32 @@ export default function NurseStationDashboard() {
                           <span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400">kg</span>
                         </div>
                       </div>
+
+                      {/* Alergi Makanan & Obat */}
+                      <div className="col-span-2 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 mt-2">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Alergi Makanan</label>
+                          <input
+                            type="text"
+                            disabled={!activeAntrean || isActiveBatal || isActiveSelesai}
+                            placeholder="Contoh: Seafood, Kacang (kosongkan jika tdk ada)"
+                            value={formTriage.alergi_makanan}
+                            onChange={(e) => setFormTriage({...formTriage, alergi_makanan: e.target.value})}
+                            className="w-full rounded-xl border-2 border-slate-200 p-3.5 pl-4 text-sm font-semibold text-slate-800 focus:border-red-500 outline-none transition-all bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Alergi Obat</label>
+                          <input
+                            type="text"
+                            disabled={!activeAntrean || isActiveBatal || isActiveSelesai}
+                            placeholder="Contoh: Penicillin, Sulfa (kosongkan jika tdk ada)"
+                            value={formTriage.alergi_obat}
+                            onChange={(e) => setFormTriage({...formTriage, alergi_obat: e.target.value})}
+                            className="w-full rounded-xl border-2 border-slate-200 p-3.5 pl-4 text-sm font-semibold text-slate-800 focus:border-red-500 outline-none transition-all bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -963,6 +1053,164 @@ export default function NurseStationDashboard() {
           </div>
 
         </main>
+
+        {/* PANEL KANAN: RIWAYAT KLINIS & ALERGI PASIEN (4 KOLOM) */}
+        <aside className="lg:col-span-4 bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full min-h-[75vh]">
+          <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-100">
+            <h2 className="text-sm font-black text-slate-800 tracking-wide flex items-center gap-2">
+              <span className="text-red-600 text-lg">📋</span> Riwayat & Alergi
+            </h2>
+          </div>
+
+          {!activeAntrean ? (
+            <div className="text-center py-12 px-4 rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50/50 flex-1 flex flex-col justify-center items-center">
+              <span className="text-4xl block mb-3 opacity-50">📂</span>
+              <p className="text-xs font-bold text-slate-400">Pilih pasien untuk melihat<br/>riwayat kunjungan & alergi.</p>
+            </div>
+          ) : (
+            <div className="space-y-5 flex-1 flex flex-col overflow-hidden">
+              
+              {/* STATUS ALERGI PASIEN */}
+              <div className="space-y-2">
+                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Status Alergi Aktif</span>
+                
+                {(() => {
+                  const alergiMakanan = formTriage.alergi_makanan || historyKunjungan.find(k => k.asesmen_keperawatan?.[0]?.alergi_makanan)?.asesmen_keperawatan?.[0]?.alergi_makanan;
+                  const alergiObat = formTriage.alergi_obat || historyKunjungan.find(k => k.asesmen_keperawatan?.[0]?.alergi_obat)?.asesmen_keperawatan?.[0]?.alergi_obat;
+
+                  if (!alergiMakanan && !alergiObat) {
+                    return (
+                      <div className="bg-emerald-50 border border-emerald-200/80 rounded-xl p-3 flex items-center gap-2.5">
+                        <span className="text-emerald-600 text-lg">🛡️</span>
+                        <div>
+                          <h4 className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">Aman / Bebas Alergi</h4>
+                          <p className="text-[10px] font-bold text-emerald-600 mt-0.5">Tidak ada riwayat alergi obat & makanan yang tercatat.</p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-2">
+                      {alergiMakanan && (
+                        <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-start gap-2.5 shadow-sm">
+                          <span className="text-rose-600 text-lg">🚫</span>
+                          <div className="flex-1">
+                            <h4 className="text-[10px] font-bold uppercase tracking-wider text-rose-800">Alergi Makanan</h4>
+                            <p className="text-xs font-black text-rose-700 mt-0.5">{alergiMakanan}</p>
+                          </div>
+                        </div>
+                      )}
+                      {alergiObat && (
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2.5 shadow-sm">
+                          <span className="text-red-600 text-lg">💊</span>
+                          <div className="flex-1">
+                            <h4 className="text-[10px] font-bold uppercase tracking-wider text-red-800">Alergi Obat</h4>
+                            <p className="text-xs font-black text-red-700 mt-0.5">{alergiObat}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* TIMELINE RIWAYAT KUNJUNGAN */}
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-3">5 Kunjungan Terakhir</span>
+                
+                {loadingHistory ? (
+                  <div className="text-center py-12 flex-1 flex flex-col justify-center items-center">
+                    <span className="animate-spin text-2xl block mb-2">⏳</span>
+                    <span className="text-xs font-bold text-slate-400">Memuat riwayat klinis...</span>
+                  </div>
+                ) : historyKunjungan.length === 0 ? (
+                  <div className="text-center py-12 px-4 rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50/50 flex-1 flex flex-col justify-center items-center">
+                    <span className="text-3xl block mb-2">📅</span>
+                    <span className="text-xs font-bold text-slate-400">Belum ada riwayat kunjungan terdahulu.</span>
+                  </div>
+                ) : (
+                  <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-2 scrollbar-thin scrollbar-thumb-slate-200">
+                    {historyKunjungan.map((visit) => {
+                      const assessment = visit.asesmen_keperawatan?.[0];
+                      const dateStr = formatLocalDate(visit.tgl_kunjungan);
+                      
+                      return (
+                        <div key={visit.id_kunjungan} className="relative pl-6 pb-2 border-l border-slate-200 last:border-0 last:pb-0">
+                          {/* Dot Connector */}
+                          <div className="absolute left-[-5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-red-500 bg-white"></div>
+                          
+                          <div className="p-3 bg-slate-50 border border-slate-200/60 rounded-xl space-y-2 hover:border-slate-300 hover:bg-white hover:shadow-sm transition-all duration-200">
+                            {/* Visit Info Header */}
+                            <div className="flex justify-between items-start gap-2">
+                              <div>
+                                <span className="text-[10px] font-black text-slate-700 block leading-tight">{visit.nama_poli}</span>
+                                <span className="text-[9px] font-bold text-slate-400 block mt-0.5">Dr. {visit.nama_dokter}</span>
+                              </div>
+                              <span className="text-[9px] font-black text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-md font-mono shrink-0">
+                                {dateStr}
+                              </span>
+                            </div>
+
+                            {/* Vital Signs (TTV) */}
+                            {assessment ? (
+                              <div className="space-y-1.5 border-t border-slate-100 pt-2">
+                                <div className="grid grid-cols-2 gap-2 text-[10px] font-medium text-slate-600">
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs">🩺</span>
+                                    <span>Tensi: <strong className="font-mono text-slate-900">{assessment.sistole}/{assessment.diastole}</strong> <span className="text-[8px] text-slate-400">mmHg</span></span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs">🌡️</span>
+                                    <span>Suhu: <strong className="font-mono text-slate-900">{assessment.suhu_tubuh}</strong> <span className="text-[8px] text-slate-400">°C</span></span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs">⚖️</span>
+                                    <span>Berat: <strong className="font-mono text-slate-900">{assessment.berat_badan}</strong> <span className="text-[8px] text-slate-400">kg</span></span>
+                                  </div>
+                                </div>
+
+                                {/* Complaints (Keluhan) */}
+                                {assessment.keluhan_utama && (
+                                  <div className="bg-white p-2 rounded-lg border border-slate-200/50 text-[10px] leading-relaxed text-slate-700">
+                                    <span className="font-black block text-[8px] text-slate-400 uppercase tracking-widest mb-0.5">Keluhan Utama</span>
+                                    <p className="italic">💬 {assessment.keluhan_utama}</p>
+                                  </div>
+                                )}
+
+                                {/* Allergy Records in this visit */}
+                                {(assessment.alergi_makanan || assessment.alergi_obat) && (
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {assessment.alergi_makanan && (
+                                      <span className="bg-rose-50 text-rose-600 text-[8px] font-bold px-1.5 py-0.5 rounded border border-rose-100/50 shrink-0">
+                                        🚫 Alergi Mkn: {assessment.alergi_makanan}
+                                      </span>
+                                    )}
+                                    {assessment.alergi_obat && (
+                                      <span className="bg-red-50 text-red-600 text-[8px] font-bold px-1.5 py-0.5 rounded border border-red-100/50 shrink-0">
+                                        💊 Alergi Obat: {assessment.alergi_obat}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-[9px] italic text-slate-400 border-t border-slate-100 pt-2">
+                                Tidak ada catatan asesmen keperawatan (TTV) untuk kunjungan ini.
+                              </div>
+                            )}
+
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+            </div>
+          )}
+        </aside>
       </div>
     </MasterLayout>
   );

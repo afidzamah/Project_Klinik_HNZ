@@ -29,6 +29,8 @@ export class AsesmenKeperawatanService {
         tinggi_badan: createAsesmenDto.tinggi_badan,
         detak_jantung: createAsesmenDto.detak_jantung,
         respiratory_rate: createAsesmenDto.respiratory_rate,
+        alergi_makanan: createAsesmenDto.alergi_makanan,
+        alergi_obat: createAsesmenDto.alergi_obat,
         waktu_periksa: new Date(),
       },
     });

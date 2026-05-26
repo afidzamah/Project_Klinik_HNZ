@@ -73,6 +73,7 @@ export class PasienService {
           },
           include: {
             cara_bayar: true,
+            asesmen_keperawatan: true,
           },
         },
       },
