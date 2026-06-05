@@ -268,13 +268,13 @@ export default function ResepForm({
     standardRows: RowItem[], 
     currentBahan?: RacikanBahan[], 
     currentSediaan?: string, 
-    currentJml?: number, 
+    currentJml?: number | '', 
     currentFreq?: string, 
     currentWaktu?: string, 
     currentCara?: string, 
     currentNotes?: string, 
-    currentBb?: number, 
-    currentDosisPemberian?: number,
+    currentBb?: number | '', 
+    currentDosisPemberian?: number | '',
     currentNamaRacikan?: string
   ) => {
     if (!setPrescribedDrugs) return;
@@ -295,13 +295,16 @@ export default function ResepForm({
 
     if (filledBahan.length > 0) {
       const sediaan = currentSediaan || jenisSediaan;
-      const jmlBungkus = currentJml !== undefined ? currentJml : jumlahBungkus;
+      const rawJml = currentJml !== undefined ? currentJml : jumlahBungkus;
+      const jmlBungkus = typeof rawJml === 'number' ? rawJml : 0;
       const freq = currentFreq || racikanFreq;
       const waktu = currentWaktu || racikanWaktu;
       const cara = currentCara || racikanCara;
       const notes = currentNotes || racikanCatatan;
-      const bb = currentBb !== undefined ? currentBb : bbPasien;
-      const dPemberian = currentDosisPemberian !== undefined ? currentDosisPemberian : dosisPerPemberian;
+      const rawBb = currentBb !== undefined ? currentBb : bbPasien;
+      const bb = typeof rawBb === 'number' ? rawBb : 0;
+      const rawDosis = currentDosisPemberian !== undefined ? currentDosisPemberian : dosisPerPemberian;
+      const dPemberian = typeof rawDosis === 'number' ? rawDosis : 0;
       const name = currentNamaRacikan !== undefined ? currentNamaRacikan : namaRacikan;
 
       const nameRx = `R/ ${name || 'Puyer Racikan'} (${sediaan} — ${jmlBungkus} unit)`;
@@ -1342,7 +1345,7 @@ export default function ResepForm({
                 {bahanList.map((b, idx) => {
                   const rawDose = parseFloat(b.dosis) || 0;
                   const isQs = b.notasi === 'qs';
-                  const computedTotal = isQs ? 'qs (auto)' : `${(rawDose * jumlahBungkus).toLocaleString('id-ID')} ${b.satuan}`;
+                  const computedTotal = isQs ? 'qs (auto)' : `${(rawDose * (typeof jumlahBungkus === 'number' ? jumlahBungkus : 0)).toLocaleString('id-ID')} ${b.satuan}`;
                   
                   return (
                     <tr 
@@ -1524,7 +1527,7 @@ export default function ResepForm({
 
               {bahanList.slice(0, 3).map((b, idx) => {
                 const rawDose = parseFloat(b.dosis) || 0;
-                const totalText = b.notasi === 'qs' ? 'qs (auto)' : `${(rawDose * jumlahBungkus).toLocaleString('id-ID')} ${b.satuan}`;
+                const totalText = b.notasi === 'qs' ? 'qs (auto)' : `${(rawDose * (typeof jumlahBungkus === 'number' ? jumlahBungkus : 0)).toLocaleString('id-ID')} ${b.satuan}`;
                 return (
                   <div key={b.id} className="p-3 bg-white dark:bg-slate-950 border border-indigo-100 dark:border-white/5 rounded-xl shadow-2xs">
                     <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-wide block mb-0.5 truncate">Total {b.zat || `Bahan ${idx + 1}`}</span>

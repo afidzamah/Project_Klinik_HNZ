@@ -373,7 +373,7 @@ export default function FarmasiDashboard() {
     const statusResep = resep.kunjungan?.resep?.[0]?.status_resep || 'Terkirim';
     
     if (statusResep === 'Diproses' || statusResep === 'Selesai') {
-      const allIdxs = new Set();
+      const allIdxs = new Set<number>();
       for (let i = 0; i < items.length; i++) {
         allIdxs.add(i);
       }
