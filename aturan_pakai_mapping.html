@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapping Aturan Pakai Resep Dokter</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F7F6F2;
+  --surface: #FFFFFF;
+  --surface2: #F2F1EC;
+  --border: #E0DED6;
+  --border2: #CCCABC;
+  --text: #1A1916;
+  --text2: #5A5849;
+  --text3: #9A9788;
+  --accent: #1A472A;
+  --accent-light: #E8F5EE;
+  --accent-border: #A8D5B5;
+  --warn: #7C4D00;
+  --warn-light: #FFF8EC;
+  --warn-border: #F0C878;
+  --info: #1A3A6B;
+  --info-light: #EEF3FB;
+  --info-border: #A8C0E8;
+  --danger: #7C1A1A;
+  --danger-light: #FFF0F0;
+  --danger-border: #F0A8A8;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* HEADER */
+.page-header {
+  background: var(--accent);
+  padding: 20px 24px 18px;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px;
+}
+.ph-title { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 3px; }
+.ph-sub { font-size: 11.5px; color: #9FD4AE; line-height: 1.5; }
+.ph-stats { display: flex; gap: 10px; }
+.stat-chip {
+  background: rgba(255,255,255,.12);
+  border: 0.5px solid rgba(255,255,255,.2);
+  border-radius: 20px; padding: 4px 12px;
+  font-size: 11px; color: #D4F0DC; font-weight: 500;
+}
+
+/* SEARCH & FILTER */
+.controls {
+  background: var(--surface);
+  border-bottom: 0.5px solid var(--border);
+  padding: 10px 16px;
+  display: flex; align-items: center; gap: 10px;
+  position: sticky; top: 0; z-index: 10;
+}
+.search-wrap { position: relative; flex: 1; max-width: 340px; }
+.search-wrap input {
+  width: 100%; height: 34px;
+  font-family: var(--sans); font-size: 12.5px;
+  background: var(--surface2); border: 0.5px solid var(--border);
+  border-radius: 6px; padding: 0 10px 0 32px; outline: none;
+  color: var(--text);
+}
+.search-wrap input:focus { border-color: var(--accent); background: #fff; }
+.search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--text3); pointer-events: none; }
+.filter-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+.fc {
+  font-size: 11.5px; font-weight: 500; padding: 4px 11px; border-radius: 20px;
+  border: 0.5px solid var(--border2); background: var(--surface2);
+  color: var(--text2); cursor: pointer; transition: all .12s;
+  white-space: nowrap;
+}
+.fc:hover { background: var(--border); }
+.fc.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.ctrl-count { margin-left: auto; font-size: 11px; color: var(--text3); white-space: nowrap; }
+
+/* CONTENT */
+.content { padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+
+/* SECTION */
+.section { background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+.section-hdr {
+  padding: 10px 14px; background: var(--surface2);
+  border-bottom: 0.5px solid var(--border);
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  user-select: none;
+}
+.section-hdr:hover { background: var(--border); }
+.sec-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.sec-name { font-size: 13px; font-weight: 600; flex: 1; }
+.sec-count { font-size: 11px; color: var(--text3); background: var(--bg); border: 0.5px solid var(--border); border-radius: 10px; padding: 1px 8px; }
+.sec-chev { font-size: 13px; color: var(--text3); transition: transform .2s; }
+.sec-chev.open { transform: rotate(180deg); }
+
+/* TABLE */
+.map-table { width: 100%; border-collapse: collapse; }
+.map-table thead th {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--text3); font-weight: 500;
+  background: var(--surface2);
+  padding: 7px 14px;
+  border-bottom: 0.5px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+.map-table tbody tr { border-bottom: 0.5px solid #F5F4F0; }
+.map-table tbody tr:last-child { border-bottom: none; }
+.map-table tbody tr:hover { background: #FAFAF7; }
+.map-table tbody tr.hidden-row { display: none; }
+.map-table td { padding: 8px 14px; vertical-align: top; }
+
+/* INPUT VARIANTS */
+.variants-cell { display: flex; flex-wrap: wrap; gap: 4px; }
+.var-chip {
+  font-family: var(--mono);
+  font-size: 11px; font-weight: 500;
+  padding: 2px 8px; border-radius: 4px;
+  background: var(--surface2); border: 0.5px solid var(--border2);
+  color: var(--text); white-space: nowrap;
+}
+.var-chip.latin { background: var(--info-light); border-color: var(--info-border); color: var(--info); }
+.var-chip.indo  { background: var(--accent-light); border-color: var(--accent-border); color: var(--accent); }
+.var-chip.pola  { background: var(--warn-light); border-color: var(--warn-border); color: var(--warn); }
+.var-chip.bebas { background: #F5F0FF; border-color: #C4A8E8; color: #4A1A8A; }
+
+/* NORMALIZED */
+.norm-cell { display: flex; flex-direction: column; gap: 3px; }
+.norm-main {
+  font-family: var(--mono); font-size: 12px; font-weight: 500;
+  color: var(--accent); background: var(--accent-light);
+  border: 0.5px solid var(--accent-border);
+  border-radius: 5px; padding: 3px 9px;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.norm-sub { font-size: 11px; color: var(--text3); }
+
+/* FREQ DISPLAY */
+.freq-num {
+  font-family: var(--mono); font-size: 22px; font-weight: 500;
+  color: var(--text); line-height: 1;
+}
+.freq-unit { font-size: 10px; color: var(--text3); }
+.freq-timing {
+  font-size: 11px; color: var(--text2);
+  background: var(--surface2); border-radius: 4px;
+  padding: 1px 6px; display: inline-block; margin-top: 3px;
+}
+
+/* DOSE PER TAKE */
+.dpt { font-family: var(--mono); font-size: 12px; color: var(--text); }
+
+/* TIMING TAG */
+.timing-tag {
+  font-size: 10.5px; font-weight: 500; padding: 2px 7px;
+  border-radius: 4px; display: inline-block;
+}
+.tt-pagi   { background: #FFF9E0; color: #7C5800; border: 0.5px solid #F0D878; }
+.tt-malam  { background: #EEF0FF; color: #2A3088; border: 0.5px solid #A8B0F0; }
+.tt-siang  { background: #F5F5FF; color: #4A4A80; border: 0.5px solid #C0C0E8; }
+.tt-makan  { background: #F0FFF4; color: #166534; border: 0.5px solid #86EFAC; }
+.tt-prn    { background: var(--warn-light); color: var(--warn); border: 0.5px solid var(--warn-border); }
+.tt-stat   { background: var(--danger-light); color: var(--danger); border: 0.5px solid var(--danger-border); }
+.tt-tidur  { background: #F0F0FF; color: #3A2080; border: 0.5px solid #B0A0E0; }
+
+/* CATATAN */
+.catatan-cell { font-size: 11.5px; color: var(--text2); line-height: 1.5; }
+.catatan-cell .tag-penting { color: var(--danger); font-weight: 500; }
+.catatan-cell .tag-note { color: var(--text3); }
+
+/* LEGEND */
+.legend {
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: 10px; padding: 12px 14px;
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+}
+.legend-title { font-size: 11px; font-weight: 500; color: var(--text2); margin-right: 4px; }
+.legend-items { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* PARSER DEMO */
+.parser-demo {
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+}
+.pd-hdr { background: var(--accent); padding: 9px 14px; display: flex; align-items: center; gap: 8px; }
+.pd-title { font-size: 12.5px; font-weight: 600; color: #fff; }
+.pd-sub { font-size: 11px; color: #9FD4AE; }
+.pd-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.pd-input-wrap { display: flex; gap: 8px; }
+.pd-input {
+  flex: 1; height: 38px;
+  font-family: var(--mono); font-size: 13px;
+  background: var(--surface2); border: 0.5px solid var(--border2);
+  border-radius: 7px; padding: 0 12px; outline: none; color: var(--text);
+}
+.pd-input:focus { border-color: var(--accent); background: #fff; }
+.pd-btn {
+  height: 38px; padding: 0 16px;
+  background: var(--accent); border: none; border-radius: 7px;
+  color: #fff; font-family: var(--sans); font-size: 12.5px; font-weight: 500;
+  cursor: pointer;
+}
+.pd-btn:hover { opacity: .9; }
+.pd-result {
+  background: var(--surface2); border: 0.5px solid var(--border);
+  border-radius: 7px; padding: 10px 12px;
+  display: none;
+}
+.pd-result.show { display: block; }
+.pdr-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
+.pdr-item { background: #fff; border: 0.5px solid var(--border); border-radius: 6px; padding: 7px 10px; }
+.pdr-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); margin-bottom: 3px; }
+.pdr-val { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--accent); }
+.pdr-val.unknown { color: var(--danger); }
+.pd-suggestions { display: flex; flex-wrap: wrap; gap: 5px; }
+.pd-sug {
+  font-family: var(--mono); font-size: 11px; padding: 3px 9px;
+  background: var(--surface2); border: 0.5px solid var(--border2);
+  border-radius: 4px; cursor: pointer; color: var(--text2);
+}
+.pd-sug:hover { background: var(--border); color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <div class="ph-title">Mapping Aturan Pakai Resep Dokter</div>
+    <div class="ph-sub">Semua variasi penulisan frekuensi obat → format standar sistem EMR<br>Berdasarkan konvensi penulisan resep klinis Indonesia</div>
+  </div>
+  <div class="ph-stats">
+    <span class="stat-chip" id="total-count">— entri</span>
+    <span class="stat-chip">4 sistem notasi</span>
+    <span class="stat-chip">Termasuk pola Indonesia</span>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="search-input" placeholder="Cari: 3x1, tds, bid, setelah makan..." oninput="filterTable()">
+  </div>
+  <div class="filter-chips">
+    <div class="fc active" onclick="filterCat('semua',this)">Semua</div>
+    <div class="fc" onclick="filterCat('latin',this)">Notasi Latin</div>
+    <div class="fc" onclick="filterCat('indo',this)">Angka Indonesia</div>
+    <div class="fc" onclick="filterCat('pola',this)">Pola X-Y-Z</div>
+    <div class="fc" onclick="filterCat('bebas',this)">Penulisan bebas</div>
+    <div class="fc" onclick="filterCat('khusus',this)">Obat khusus</div>
+  </div>
+  <span class="ctrl-count" id="result-count"></span>
+</div>
+
+<div class="content">
+
+<!-- LEGEND -->
+<div class="legend">
+  <span class="legend-title">Jenis notasi:</span>
+  <div class="legend-items">
+    <span class="var-chip latin">Latin singkatan</span>
+    <span class="var-chip indo">Angka Indonesia</span>
+    <span class="var-chip pola">Pola X-Y-Z</span>
+    <span class="var-chip bebas">Penulisan bebas</span>
+  </div>
+  <span style="flex:1"></span>
+  <span style="font-size:11px;color:var(--text3)">⚡ Kolom "Jml hari" = auto-kalkulasi jumlah tablet jika durasi diketahui</span>
+</div>
+
+<!-- PARSER DEMO -->
+<div class="parser-demo">
+  <div class="pd-hdr">
+    <div>
+      <div class="pd-title">Coba parser — ketik aturan pakai apapun</div>
+      <div class="pd-sub">Sistem akan menginterpretasikan dan menormalisasi ke format standar</div>
+    </div>
+  </div>
+  <div class="pd-body">
+    <div class="pd-input-wrap">
+      <input class="pd-input" id="parser-input" placeholder="Contoh: tds pc, 3x1, 1-0-1, sekali sehari malam..." oninput="runParser()">
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:-4px">Contoh cepat:</div>
+    <div class="pd-suggestions">
+      <span class="pd-sug" onclick="testParser('tds pc')">tds pc</span>
+      <span class="pd-sug" onclick="testParser('bd')">bd</span>
+      <span class="pd-sug" onclick="testParser('3x1')">3x1</span>
+      <span class="pd-sug" onclick="testParser('1-0-1')">1-0-1</span>
+      <span class="pd-sug" onclick="testParser('1-1-0')">1-1-0</span>
+      <span class="pd-sug" onclick="testParser('1/2-0-1/2')">1/2-0-1/2</span>
+      <span class="pd-sug" onclick="testParser('prn')">prn</span>
+      <span class="pd-sug" onclick="testParser('q8h')">q8h</span>
+      <span class="pd-sug" onclick="testParser('hs')">hs</span>
+      <span class="pd-sug" onclick="testParser('od')">od</span>
+      <span class="pd-sug" onclick="testParser('qid')">qid</span>
+      <span class="pd-sug" onclick="testParser('stat')">stat</span>
+      <span class="pd-sug" onclick="testParser('selang sehari')">selang sehari</span>
+      <span class="pd-sug" onclick="testParser('2x sehari setelah makan')">2x sehari setelah makan</span>
+      <span class="pd-sug" onclick="testParser('mane')">mane</span>
+      <span class="pd-sug" onclick="testParser('nocte')">nocte</span>
+    </div>
+    <div class="pd-result" id="parser-result">
+      <div style="font-size:11px;font-weight:500;color:var(--text2);margin-bottom:6px">Hasil interpretasi:</div>
+      <div class="pdr-grid">
+        <div class="pdr-item"><div class="pdr-label">Frekuensi / hari</div><div class="pdr-val" id="pdr-freq">—</div></div>
+        <div class="pdr-item"><div class="pdr-label">Dosis per minum</div><div class="pdr-val" id="pdr-dose">—</div></div>
+        <div class="pdr-item"><div class="pdr-label">Waktu minum</div><div class="pdr-val" id="pdr-timing">—</div></div>
+        <div class="pdr-item"><div class="pdr-label">Format standar</div><div class="pdr-val" id="pdr-std">—</div></div>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:var(--text3)" id="pdr-note"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DATA SECTIONS -->
+<div id="table-sections"></div>
+
+</div>
+
+<script>
+var DATA = [
+  /* ── LATIN ── */
+  { cat:'latin', variants:['od','omni die','o.d.'], norm:'1x1', freqDay:1, dosePerTake:'1', timing:['bebas'], catatan:'Sekali sehari, waktu tidak ditentukan kecuali ada tambahan', penting:false },
+  { cat:'latin', variants:['bd','bis die','bid','b.i.d.','b.d.'], norm:'2x1', freqDay:2, dosePerTake:'1', timing:['pagi','malam'], catatan:'Dua kali sehari. Umumnya pagi dan malam.', penting:false },
+  { cat:'latin', variants:['tds','ter die sumendus','tid','t.i.d.','t.d.s.'], norm:'3x1', freqDay:3, dosePerTake:'1', timing:['pagi','siang','malam'], catatan:'Tiga kali sehari. Paling umum ditulis dokter Indonesia.', penting:true },
+  { cat:'latin', variants:['qid','quater in die','q.i.d.'], norm:'4x1', freqDay:4, dosePerTake:'1', timing:['pagi','siang','sore','malam'], catatan:'Empat kali sehari, interval kurang lebih 6 jam.', penting:false },
+  { cat:'latin', variants:['q4h','q.4.h.','setiap 4 jam'], norm:'q4h', freqDay:6, dosePerTake:'1', timing:['setiap 4 jam'], catatan:'Setiap 4 jam termasuk malam. Penting untuk antibiotik level-dependent.', penting:true },
+  { cat:'latin', variants:['q6h','q.6.h.','setiap 6 jam'], norm:'q6h', freqDay:4, dosePerTake:'1', timing:['setiap 6 jam'], catatan:'Setiap 6 jam. Setara qid tapi dengan penekanan interval ketat.', penting:false },
+  { cat:'latin', variants:['q8h','q.8.h.','setiap 8 jam'], norm:'q8h', freqDay:3, dosePerTake:'1', timing:['setiap 8 jam'], catatan:'Setiap 8 jam. Setara tds tapi interval lebih ketat (contoh: antibiotik).', penting:true },
+  { cat:'latin', variants:['q12h','q.12.h.','setiap 12 jam'], norm:'q12h', freqDay:2, dosePerTake:'1', timing:['setiap 12 jam'], catatan:'Setiap 12 jam. Lebih ketat dari bd — biasanya untuk antibiotik atau obat level darah.', penting:false },
+  { cat:'latin', variants:['prn','p.r.n.','k/p','kalau perlu','bila perlu','jika perlu'], norm:'prn', freqDay:0, dosePerTake:'1', timing:['prn'], catatan:'Kondisional. Biasanya disertai kondisi dan batas maksimal dosis/hari.', penting:true },
+  { cat:'latin', variants:['sos','si opus sit','s.o.s.'], norm:'sos', freqDay:0, dosePerTake:'1', timing:['prn'], catatan:'Mirip prn tapi hanya sekali. Jika tidak membaik, hentikan atau ganti.', penting:false },
+  { cat:'latin', variants:['stat','s.t.a.t.','segera','sekarang'], norm:'stat', freqDay:1, dosePerTake:'1', timing:['stat'], catatan:'Berikan segera saat itu juga. Untuk dosis loading atau kondisi darurat.', penting:true },
+  { cat:'latin', variants:['ac','ante cibum','sebelum makan','a.c.'], norm:'ac', freqDay:null, dosePerTake:null, timing:['sebelum-makan'], catatan:'Modifikasi WAKTU, bukan frekuensi. Dikombinasikan: tds ac = 3x1 sebelum makan.', penting:true },
+  { cat:'latin', variants:['pc','post cibum','setelah makan','sesudah makan','p.c.'], norm:'pc', freqDay:null, dosePerTake:null, timing:['makan'], catatan:'Modifikasi WAKTU. tds pc = 3x1 setelah makan. Paling umum di Indonesia.', penting:true },
+  { cat:'latin', variants:['hs','hora somni','sebelum tidur','menjelang tidur','h.s.'], norm:'hs', freqDay:1, dosePerTake:'1', timing:['tidur'], catatan:'Satu kali, saat akan tidur malam. Untuk statin, antihistamin, hipnotik.', penting:true },
+  { cat:'latin', variants:['mane','pagi hari','pagi'], norm:'mane', freqDay:1, dosePerTake:'1', timing:['pagi'], catatan:'Sekali sehari, pagi hari. Untuk diuretik, kortikosteroid (ikuti ritme kortisol).', penting:true },
+  { cat:'latin', variants:['nocte','malam hari','malam'], norm:'nocte', freqDay:1, dosePerTake:'1', timing:['malam'], catatan:'Sekali sehari, malam hari. Untuk statin (efek optimal malam), beberapa antihipertensi.', penting:true },
+
+  /* ── ANGKA INDONESIA ── */
+  { cat:'indo', variants:['3x1','3 x 1','3×1'], norm:'3x1', freqDay:3, dosePerTake:'1 tab', timing:['pagi','siang','malam'], catatan:'Format paling umum di Indonesia. Tiga kali sehari satu tablet.', penting:true },
+  { cat:'indo', variants:['2x1','2 x 1','2×1'], norm:'2x1', freqDay:2, dosePerTake:'1 tab', timing:['pagi','malam'], catatan:'Dua kali sehari satu tablet.', penting:true },
+  { cat:'indo', variants:['1x1','1 x 1','1×1'], norm:'1x1', freqDay:1, dosePerTake:'1 tab', timing:['bebas'], catatan:'Sekali sehari satu tablet. Biasanya diikuti keterangan waktu.', penting:true },
+  { cat:'indo', variants:['4x1','4 x 1'], norm:'4x1', freqDay:4, dosePerTake:'1 tab', timing:['pagi','siang','sore','malam'], catatan:'Empat kali sehari.', penting:false },
+  { cat:'indo', variants:['3x2','3 x 2'], norm:'3x2', freqDay:3, dosePerTake:'2 tab', timing:['pagi','siang','malam'], catatan:'Tiga kali sehari DUA tablet. Perhatikan dosis total.', penting:true },
+  { cat:'indo', variants:['2x2','2 x 2'], norm:'2x2', freqDay:2, dosePerTake:'2 tab', timing:['pagi','malam'], catatan:'Dua kali sehari dua tablet.', penting:false },
+  { cat:'indo', variants:['3x½','3x1/2','3 x ½'], norm:'3x½', freqDay:3, dosePerTake:'½ tab', timing:['pagi','siang','malam'], catatan:'Tiga kali sehari setengah tablet. Umum untuk antihipertensi dosis rendah.', penting:true },
+  { cat:'indo', variants:['2x½','2x1/2','2 x ½'], norm:'2x½', freqDay:2, dosePerTake:'½ tab', timing:['pagi','malam'], catatan:'Dua kali sehari setengah tablet.', penting:false },
+  { cat:'indo', variants:['1x½','1x1/2'], norm:'1x½', freqDay:1, dosePerTake:'½ tab', timing:['bebas'], catatan:'Sekali sehari setengah tablet.', penting:false },
+  { cat:'indo', variants:['1x1 malam','1x1 nocte','sekali malam'], norm:'1x1 (malam)', freqDay:1, dosePerTake:'1 tab', timing:['malam'], catatan:'Sekali sehari khusus malam. Untuk statin, antihistamin.', penting:true },
+  { cat:'indo', variants:['1x1 pagi','1x1 mane'], norm:'1x1 (pagi)', freqDay:1, dosePerTake:'1 tab', timing:['pagi'], catatan:'Sekali sehari khusus pagi. Untuk diuretik, levotiroksin.', penting:true },
+
+  /* ── POLA X-Y-Z ── */
+  { cat:'pola', variants:['1-1-1'], norm:'3x1 (pagi-siang-malam)', freqDay:3, dosePerTake:'1-1-1', timing:['pagi','siang','malam'], catatan:'Pagi 1, siang 1, malam 1. Setara 3x1 dengan jadwal jelas.', penting:true },
+  { cat:'pola', variants:['1-0-1'], norm:'2x1 (pagi-malam)', freqDay:2, dosePerTake:'1-0-1', timing:['pagi','malam'], catatan:'Pagi 1, siang tidak, malam 1. BERBEDA dari 2x1 — eksplisit tidak ada siang.', penting:true },
+  { cat:'pola', variants:['1-0-0'], norm:'1x1 (pagi)', freqDay:1, dosePerTake:'1-0-0', timing:['pagi'], catatan:'Pagi saja. Untuk diuretik, kortikosteroid.', penting:true },
+  { cat:'pola', variants:['0-0-1'], norm:'1x1 (malam)', freqDay:1, dosePerTake:'0-0-1', timing:['malam'], catatan:'Malam saja. Untuk statin, hipnotik.', penting:true },
+  { cat:'pola', variants:['1-1-0'], norm:'2x1 (pagi-siang)', freqDay:2, dosePerTake:'1-1-0', timing:['pagi','siang'], catatan:'Pagi dan siang saja, tidak malam. Untuk obat yang menyebabkan insomnia jika malam.', penting:true },
+  { cat:'pola', variants:['0-1-1'], norm:'2x1 (siang-malam)', freqDay:2, dosePerTake:'0-1-1', timing:['siang','malam'], catatan:'Siang dan malam, tidak pagi.', penting:false },
+  { cat:'pola', variants:['½-0-½','1/2-0-1/2'], norm:'2x½ (pagi-malam)', freqDay:2, dosePerTake:'½-0-½', timing:['pagi','malam'], catatan:'Setengah tablet pagi, tidak siang, setengah malam. Untuk titrasi dosis.', penting:true },
+  { cat:'pola', variants:['1-0-½','1-0-1/2'], norm:'pagi 1, malam ½', freqDay:2, dosePerTake:'1-0-½', timing:['pagi','malam'], catatan:'Asimetris — pagi full dose, malam half dose. Contoh: warfarin, beberapa antihipertensi.', penting:true },
+  { cat:'pola', variants:['2-1-2'], norm:'pagi 2, siang 1, malam 2', freqDay:3, dosePerTake:'2-1-2', timing:['pagi','siang','malam'], catatan:'Dosis tidak seragam. Perlu dicatat per waktu di label farmasi.', penting:false },
+  { cat:'pola', variants:['1-1-1-1'], norm:'4x1', freqDay:4, dosePerTake:'1-1-1-1', timing:['pagi','siang','sore','malam'], catatan:'Empat kali sehari dengan pola eksplisit.', penting:false },
+
+  /* ── PENULISAN BEBAS ── */
+  { cat:'bebas', variants:['sekali sehari','once daily','once a day'], norm:'1x1', freqDay:1, dosePerTake:'1', timing:['bebas'], catatan:'Perlu klarifikasi waktu jika relevan.', penting:false },
+  { cat:'bebas', variants:['dua kali sehari','twice daily','twice a day'], norm:'2x1', freqDay:2, dosePerTake:'1', timing:['pagi','malam'], catatan:'', penting:false },
+  { cat:'bebas', variants:['tiga kali sehari','three times daily'], norm:'3x1', freqDay:3, dosePerTake:'1', timing:['pagi','siang','malam'], catatan:'', penting:false },
+  { cat:'bebas', variants:['selang sehari','every other day','dua hari sekali'], norm:'q48h', freqDay:0.5, dosePerTake:'1', timing:['bebas'], catatan:'Setiap 2 hari. Untuk kortikosteroid jangka panjang atau beberapa obat reumatik.', penting:true },
+  { cat:'bebas', variants:['seminggu sekali','once weekly','tiap minggu'], norm:'q1w', freqDay:0.14, dosePerTake:'1', timing:['bebas'], catatan:'Satu kali seminggu. Untuk metotreksat, bisfosfonat, suplemen tertentu.', penting:true },
+  { cat:'bebas', variants:['sebulan sekali','once monthly'], norm:'q1mo', freqDay:0.03, dosePerTake:'1', timing:['bebas'], catatan:'Satu kali sebulan. Untuk bisfosfonat IV, beberapa kontrasepsi.', penting:false },
+  { cat:'bebas', variants:['setiap ... jam','tiap ... jam'], norm:'qXh', freqDay:null, dosePerTake:'1', timing:['interval'], catatan:'Interval ketat. Nilai X harus diisi: q4h, q6h, q8h, q12h.', penting:true },
+  { cat:'bebas', variants:['kalau nyeri','bila demam','jika sesak','sesuai kebutuhan'], norm:'prn (+ kondisi)', freqDay:0, dosePerTake:'1', timing:['prn'], catatan:'PRN dengan kondisi trigger. Sistem harus capture kondisi dan batas dosis.', penting:true },
+  { cat:'bebas', variants:['loading dose lalu ...','dosis awal ... kemudian ...'], norm:'loading + maintenance', freqDay:null, dosePerTake:'var', timing:['stat+reguler'], catatan:'Dua fase: dosis awal lebih tinggi, lanjut dosis maintenance. Perlu dua baris di resep.', penting:true },
+  { cat:'bebas', variants:['tappering','tapering off','turunkan bertahap'], norm:'tapering', freqDay:null, dosePerTake:'var', timing:['bertahap'], catatan:'Dosis diturunkan bertahap. Perlu jadwal per minggu di catatan resep.', penting:true },
+
+  /* ── OBAT KHUSUS ── */
+  { cat:'khusus', variants:['X IU malam','X unit/hari','sliding scale'], norm:'sesuai jadwal insulin', freqDay:null, dosePerTake:'var IU', timing:['malam','prn'], catatan:'Insulin basal: malam hari. Sliding scale: berdasarkan GDS. Perlu skema terpisah.', penting:true },
+  { cat:'khusus', variants:['1 puff bd','2 puff tid','1 semprot ...'], norm:'X puff Xkali', freqDay:null, dosePerTake:'puff', timing:['bebas'], catatan:'Inhaler: dosis dalam puff/semprot, bukan tablet. Sertakan teknik inhalasi di catatan.', penting:true },
+  { cat:'khusus', variants:['1 tetes OD bd','2 tetes OU tds','gtt OD/OS/OU'], norm:'X tetes OD/OS/OU', freqDay:null, dosePerTake:'tetes', timing:['bebas'], catatan:'OD=mata kanan, OS=mata kiri, OU=kedua mata. Gtt=guttae=tetes.', penting:true },
+  { cat:'khusus', variants:['oleskan tipis','ue','usus externus','topical bd'], norm:'topikal Xkali', freqDay:null, dosePerTake:'tipis', timing:['bebas'], catatan:'Salep/krim: oleskan tipis di area yang sakit. ue = untuk pemakaian luar.', penting:false },
+  { cat:'khusus', variants:['1 suppos rektal','1 suppositoria','supp k/p'], norm:'1 suppos rektal prn', freqDay:0, dosePerTake:'1 suppos', timing:['prn'], catatan:'Suppositoria rektal. Biasanya PRN untuk demam tinggi atau mual pasca operasi.', penting:false },
+  { cat:'khusus', variants:['nebulisasi q4h','nebu tid'], norm:'nebulisasi Xkali', freqDay:null, dosePerTake:'1 nebulisasi', timing:['interval'], catatan:'Obat nebulisasi: frekuensi sama tapi rute berbeda. Perlu instruksi alat.', penting:false },
+];
+
+var activeFilter = 'semua';
+var activeSearch = '';
+
+function renderSections() {
+  var cats = [
+    { id:'latin', label:'Notasi Latin / singkatan medis', icon:'🔬', bg:'#E8F0FB' },
+    { id:'indo',  label:'Notasi angka Indonesia (X×Y)', icon:'🇮🇩', bg:'#E8F5EE' },
+    { id:'pola',  label:'Pola X-Y-Z (Indonesia — khas)', icon:'📊', bg:'#FFF8EC' },
+    { id:'bebas', label:'Penulisan bebas / campuran', icon:'✍️', bg:'#F5F0FF' },
+    { id:'khusus',label:'Notasi khusus per jenis obat', icon:'⚕️', bg:'#FFF0F0' },
+  ];
+  var wrap = document.getElementById('table-sections');
+  wrap.innerHTML = '';
+  cats.forEach(function(cat) {
+    var items = DATA.filter(function(d){ return d.cat===cat.id; });
+    var sec = document.createElement('div');
+    sec.className = 'section';
+    sec.id = 'sec-'+cat.id;
+    sec.innerHTML =
+      '<div class="section-hdr" onclick="toggleSec(\''+cat.id+'\')">' +
+        '<div class="sec-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>' +
+        '<span class="sec-name">'+cat.label+'</span>' +
+        '<span class="sec-count" id="cnt-'+cat.id+'">'+items.length+' entri</span>' +
+        '<span class="sec-chev open" id="chev-'+cat.id+'">▾</span>' +
+      '</div>' +
+      '<div id="body-'+cat.id+'">' +
+        '<table class="map-table">' +
+          '<thead><tr>' +
+            '<th style="width:200px">Input dokter</th>' +
+            '<th style="width:120px">Format standar</th>' +
+            '<th style="width:70px">Freq/hari</th>' +
+            '<th style="width:90px">Dosis/minum</th>' +
+            '<th style="width:130px">Waktu</th>' +
+            '<th>Catatan implementasi</th>' +
+          '</tr></thead>' +
+          '<tbody id="tbody-'+cat.id+'">' +
+          buildRows(items) +
+          '</tbody>' +
+        '</table>' +
+      '</div>';
+    wrap.appendChild(sec);
+  });
+  updateCount();
+}
+
+function buildRows(items) {
+  return items.map(function(d, i) {
+    var varChips = d.variants.map(function(v) {
+      return '<span class="var-chip '+d.cat+'">'+v+'</span>';
+    }).join('');
+    var timingHtml = d.timing.map(function(t) {
+      var cls = t==='pagi'?'tt-pagi':t==='malam'?'tt-malam':t==='siang'?'tt-siang':(t==='makan'||t==='sebelum-makan')?'tt-makan':t==='prn'?'tt-prn':t==='stat'?'tt-stat':t==='tidur'?'tt-tidur':'tt-pagi';
+      return '<span class="timing-tag '+cls+'">'+t+'</span>';
+    }).join(' ');
+    var freqDisp = d.freqDay===null ? '<span style="color:var(--text3);font-size:11px">per kasus</span>' :
+      d.freqDay===0 ? '<span style="color:var(--warn);font-size:11px">prn</span>' :
+      '<span class="freq-num">'+d.freqDay+'</span><span class="freq-unit">×/hari</span>';
+    var doseDisp = d.dosePerTake===null ? '<span style="color:var(--text3);font-size:11px">—</span>' :
+      '<span class="dpt">'+d.dosePerTake+'</span>';
+    return '<tr data-cat="'+d.cat+'" data-search="'+d.variants.join(' ').toLowerCase()+' '+d.catatan.toLowerCase()+' '+d.norm.toLowerCase()+'">' +
+      '<td><div class="variants-cell">'+varChips+'</div></td>' +
+      '<td><div class="norm-cell"><span class="norm-main">'+d.norm+'</span></div></td>' +
+      '<td>'+freqDisp+'</td>' +
+      '<td>'+doseDisp+'</td>' +
+      '<td>'+timingHtml+'</td>' +
+      '<td class="catatan-cell">'+
+        (d.penting?'<span class="tag-penting">⚑ </span>':'')+
+        d.catatan+
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function toggleSec(id) {
+  var body = document.getElementById('body-'+id);
+  var chev = document.getElementById('chev-'+id);
+  var hidden = body.style.display==='none';
+  body.style.display = hidden ? '' : 'none';
+  chev.classList.toggle('open', hidden);
+}
+
+function filterCat(cat, el) {
+  activeFilter = cat;
+  document.querySelectorAll('.fc').forEach(function(f){ f.classList.remove('active'); });
+  el.classList.add('active');
+  filterTable();
+}
+
+function filterTable() {
+  activeSearch = document.getElementById('search-input').value.toLowerCase();
+  var total = 0;
+  document.querySelectorAll('.map-table tbody tr').forEach(function(tr) {
+    var catOk = activeFilter==='semua' || tr.dataset.cat===activeFilter;
+    var searchOk = !activeSearch || (tr.dataset.search||'').includes(activeSearch);
+    var show = catOk && searchOk;
+    tr.style.display = show ? '' : 'none';
+    if(show) total++;
+  });
+  document.getElementById('result-count').textContent = total + ' entri ditampilkan';
+  document.getElementById('total-count').textContent = DATA.length + ' entri';
+}
+
+function updateCount() {
+  document.getElementById('result-count').textContent = DATA.length + ' entri ditampilkan';
+  document.getElementById('total-count').textContent = DATA.length + ' entri';
+}
+
+/* PARSER */
+var PARSER_MAP = [
+  { patterns:['od','omni die','o.d.'], freq:1, dose:'1', timing:'bebas', std:'1x1' },
+  { patterns:['bd','bis die','bid','b.i.d.','b.d.'], freq:2, dose:'1', timing:'pagi & malam', std:'2x1' },
+  { patterns:['tds','ter die','tid','t.i.d.','t.d.s.'], freq:3, dose:'1', timing:'pagi, siang & malam', std:'3x1' },
+  { patterns:['qid','quater','q.i.d.'], freq:4, dose:'1', timing:'4x sehari ~6 jam', std:'4x1' },
+  { patterns:['q4h','q.4.h.'], freq:6, dose:'1', timing:'setiap 4 jam', std:'q4h' },
+  { patterns:['q6h','q.6.h.'], freq:4, dose:'1', timing:'setiap 6 jam', std:'q6h' },
+  { patterns:['q8h','q.8.h.','setiap 8 jam','tiap 8 jam'], freq:3, dose:'1', timing:'setiap 8 jam', std:'q8h' },
+  { patterns:['q12h','q.12.h.','setiap 12 jam'], freq:2, dose:'1', timing:'setiap 12 jam', std:'q12h' },
+  { patterns:['prn','p.r.n.','k/p','kalau perlu','bila perlu','jika perlu'], freq:0, dose:'1', timing:'kondisional', std:'prn' },
+  { patterns:['sos','si opus sit'], freq:0, dose:'1', timing:'sekali jika perlu', std:'sos' },
+  { patterns:['stat','s.t.a.t.','segera','sekarang juga'], freq:1, dose:'1', timing:'segera', std:'stat' },
+  { patterns:['hs','hora somni','sebelum tidur','menjelang tidur'], freq:1, dose:'1', timing:'malam (tidur)', std:'1x1 (hs)' },
+  { patterns:['mane','pagi hari','pagi saja'], freq:1, dose:'1', timing:'pagi hari', std:'1x1 (mane)' },
+  { patterns:['nocte','malam hari','malam saja'], freq:1, dose:'1', timing:'malam hari', std:'1x1 (nocte)' },
+  { patterns:['3x1','3 x 1'], freq:3, dose:'1 tab', timing:'pagi, siang & malam', std:'3x1' },
+  { patterns:['2x1','2 x 1'], freq:2, dose:'1 tab', timing:'pagi & malam', std:'2x1' },
+  { patterns:['1x1','1 x 1'], freq:1, dose:'1 tab', timing:'bebas', std:'1x1' },
+  { patterns:['4x1'], freq:4, dose:'1 tab', timing:'4x sehari', std:'4x1' },
+  { patterns:['3x2'], freq:3, dose:'2 tab', timing:'pagi, siang & malam', std:'3x2' },
+  { patterns:['3x½','3x1/2'], freq:3, dose:'½ tab', timing:'pagi, siang & malam', std:'3x½' },
+  { patterns:['2x½','2x1/2'], freq:2, dose:'½ tab', timing:'pagi & malam', std:'2x½' },
+  { patterns:['1-1-1'], freq:3, dose:'1-1-1', timing:'pagi, siang & malam', std:'3x1 (1-1-1)' },
+  { patterns:['1-0-1'], freq:2, dose:'1-0-1', timing:'pagi & malam (eksplisit)', std:'2x1 (1-0-1)' },
+  { patterns:['1-0-0'], freq:1, dose:'1-0-0', timing:'pagi saja', std:'1x1 (pagi)' },
+  { patterns:['0-0-1'], freq:1, dose:'0-0-1', timing:'malam saja', std:'1x1 (malam)' },
+  { patterns:['1-1-0'], freq:2, dose:'1-1-0', timing:'pagi & siang', std:'2x1 (1-1-0)' },
+  { patterns:['½-0-½','1/2-0-1/2'], freq:2, dose:'½-0-½', timing:'pagi & malam setengah', std:'2x½ (½-0-½)' },
+  { patterns:['selang sehari','every other day','dua hari sekali'], freq:0.5, dose:'1', timing:'setiap 2 hari', std:'q48h' },
+  { patterns:['seminggu sekali','once weekly','tiap minggu'], freq:0.14, dose:'1', timing:'sekali seminggu', std:'q1w' },
+  { patterns:['2x sehari setelah makan','2x sehari sesudah makan'], freq:2, dose:'1', timing:'pagi & malam setelah makan', std:'2x1 pc' },
+  { patterns:['ac','ante cibum','sebelum makan'], freq:null, dose:null, timing:'sebelum makan', std:'pc = modif waktu', note:'Modifikasi WAKTU, bukan frekuensi. Kombinasikan: "3x1 ac"' },
+  { patterns:['pc','post cibum','setelah makan','sesudah makan'], freq:null, dose:null, timing:'setelah makan', std:'pc = modif waktu', note:'Modifikasi WAKTU. Kombinasikan: "3x1 pc"' },
+];
+
+function runParser() {
+  var val = document.getElementById('parser-input').value.trim();
+  parseAndShow(val);
+}
+
+function testParser(val) {
+  document.getElementById('parser-input').value = val;
+  parseAndShow(val);
+}
+
+function parseAndShow(val) {
+  var result = document.getElementById('parser-result');
+  if(!val) { result.classList.remove('show'); return; }
+  var q = val.toLowerCase().trim();
+  var match = null;
+  for(var i=0;i<PARSER_MAP.length;i++) {
+    var pm = PARSER_MAP[i];
+    for(var j=0;j<pm.patterns.length;j++) {
+      if(q===pm.patterns[j].toLowerCase() || q.includes(pm.patterns[j].toLowerCase())) {
+        match = pm; break;
+      }
+    }
+    if(match) break;
+  }
+  result.classList.add('show');
+  if(match) {
+    document.getElementById('pdr-freq').textContent = match.freq===null ? 'modif waktu' : match.freq===0 ? 'prn/kondisional' : match.freq+'× / hari';
+    document.getElementById('pdr-freq').className = 'pdr-val';
+    document.getElementById('pdr-dose').textContent = match.dose || '—';
+    document.getElementById('pdr-dose').className = 'pdr-val';
+    document.getElementById('pdr-timing').textContent = match.timing;
+    document.getElementById('pdr-timing').className = 'pdr-val';
+    document.getElementById('pdr-std').textContent = match.std;
+    document.getElementById('pdr-std').className = 'pdr-val';
+    document.getElementById('pdr-note').textContent = match.note || '';
+  } else {
+    document.getElementById('pdr-freq').textContent = 'tidak dikenal';
+    document.getElementById('pdr-freq').className = 'pdr-val unknown';
+    document.getElementById('pdr-dose').textContent = '—';
+    document.getElementById('pdr-dose').className = 'pdr-val unknown';
+    document.getElementById('pdr-timing').textContent = '—';
+    document.getElementById('pdr-timing').className = 'pdr-val';
+    document.getElementById('pdr-std').textContent = 'perlu klarifikasi';
+    document.getElementById('pdr-std').className = 'pdr-val unknown';
+    document.getElementById('pdr-note').textContent = 'Format tidak dikenali sistem. Farmasi perlu konfirmasi ke dokter.';
+  }
+}
+
+renderSections();
+filterTable();
+</script>
+</body>
+</html>

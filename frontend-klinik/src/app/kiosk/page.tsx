@@ -374,8 +374,8 @@ export default function KioskPage() {
                           }}
                           className={`w-full flex items-center justify-between rounded-xl px-2.5 py-2 text-xs font-bold transition-all cursor-pointer ${
                             isActive
-                              ? 'bg-red-50 dark:bg-slate-800 text-red-655 dark:text-white'
-                              : 'text-slate-655 dark:text-slate-355 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                              ? 'bg-red-50 dark:bg-slate-800 text-red-600 dark:text-white'
+                              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
                           }`}
                         >
                           <div className="flex items-center gap-2">
@@ -429,7 +429,7 @@ export default function KioskPage() {
                 onClick={() => setCurrentScreen('pasien-baru')}
                 className="group flex h-64 flex-col items-center justify-center rounded-[32px] bg-white dark:bg-[#1A202C]/90 backdrop-blur-2xl p-8 shadow-[0_15px_40px_rgba(0,0,0,0.06)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-slate-200/80 dark:border-white/10 hover:border-amber-500 dark:hover:border-amber-600 transition-all duration-355 active:scale-[0.97] cursor-pointer relative overflow-hidden"
               >
-                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-650 to-rose-500"></div>
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-600 to-red-700"></div>
                 <div className="w-18 h-18 rounded-3xl bg-slate-100 dark:bg-red-950/30 flex items-center justify-center text-4xl mb-5 shadow-inner group-hover:scale-108 transition-all duration-350 border border-slate-200 dark:border-red-900/10">
                   🆕
                 </div>
@@ -446,7 +446,7 @@ export default function KioskPage() {
                 onClick={() => setCurrentScreen('pasien-lama')}
                 className="group flex h-64 flex-col items-center justify-center rounded-[32px] bg-white dark:bg-[#1A202C]/90 backdrop-blur-2xl p-8 shadow-[0_15px_40px_rgba(0,0,0,0.06)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-slate-200/80 dark:border-white/10 hover:border-amber-500 dark:hover:border-amber-600 transition-all duration-355 active:scale-[0.97] cursor-pointer relative overflow-hidden"
               >
-                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-655 to-amber-500"></div>
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-600 to-amber-700"></div>
                 <div className="w-18 h-18 rounded-3xl bg-slate-100 dark:bg-amber-950/30 flex items-center justify-center text-4xl mb-5 shadow-inner group-hover:scale-108 transition-all duration-350 border border-slate-200 dark:border-amber-900/10">
                   📇
                 </div>
@@ -465,7 +465,7 @@ export default function KioskPage() {
         {/* ================= SCREEN 2: PASIEN BARU ================= */}
         {currentScreen === 'pasien-baru' && (
           <div className="w-full max-w-lg rounded-[40px] bg-white dark:bg-[#1A202C]/90 backdrop-blur-2xl p-8 md:p-10 text-center shadow-xl border border-slate-200/80 dark:border-white/10 animate-fade-in relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-red-650 to-rose-600"></div>
+            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-red-600 to-red-700"></div>
             
             <span className="text-5xl mb-4 block filter drop-shadow">🎫</span>
             <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Cetak Tiket Loket</h2>
@@ -482,7 +482,7 @@ export default function KioskPage() {
               <button 
                 disabled={loading}
                 onClick={handleCetakAntreanPasienBaru}
-                className="w-full rounded-2xl bg-gradient-to-r from-red-650 to-rose-600 text-xs font-black tracking-widest text-white py-4.5 shadow-lg shadow-red-500/20 active:scale-98 transition-all cursor-pointer"
+                className="w-full rounded-2xl bg-gradient-to-r from-red-600 to-red-700 text-xs font-black tracking-widest text-white py-4.5 shadow-lg shadow-red-600/20 active:scale-98 transition-all cursor-pointer"
               >
                 {loading ? '⏳ MEMPROSES TIKET...' : '🖨️ CETAK TIKET LOKET'}
               </button>
@@ -547,7 +547,7 @@ export default function KioskPage() {
               <button 
                 type="button"
                 onClick={handleBackspace} 
-                className="h-13.5 rounded-2xl bg-amber-500/5 dark:bg-amber-500/10 hover:bg-amber-500/10 dark:hover:bg-amber-500/20 text-xs font-black text-amber-655 dark:text-amber-400 border border-amber-500/25 dark:border-amber-500/30 active:scale-95 shadow-xs transition-all cursor-pointer"
+                className="h-13.5 rounded-2xl bg-amber-500/5 dark:bg-amber-500/10 hover:bg-amber-500/10 dark:hover:bg-amber-500/20 text-xs font-black text-amber-600 dark:text-amber-400 border border-amber-500/25 dark:border-amber-500/30 active:scale-95 shadow-xs transition-all cursor-pointer"
               >
                 ⌫ HAPUS
               </button>
@@ -563,7 +563,7 @@ export default function KioskPage() {
               <button 
                 type="button"
                 onClick={() => setNikInput('')} 
-                className="h-13.5 rounded-2xl bg-rose-500/5 dark:bg-rose-500/10 hover:bg-rose-500/10 dark:hover:bg-rose-500/20 text-xs font-black text-rose-655 dark:text-rose-400 border border-rose-500/25 dark:border-rose-500/30 active:scale-95 shadow-xs transition-all cursor-pointer"
+                className="h-13.5 rounded-2xl bg-rose-500/5 dark:bg-rose-500/10 hover:bg-rose-500/10 dark:hover:bg-rose-500/20 text-xs font-black text-rose-600 dark:text-rose-400 border border-rose-500/25 dark:border-rose-500/30 active:scale-95 shadow-xs transition-all cursor-pointer"
               >
                 ❌ RESET
               </button>
@@ -598,7 +598,7 @@ export default function KioskPage() {
             {/* Header Profil */}
             <div className="flex justify-between items-center border-b border-slate-200/60 dark:border-white/5 pb-3">
               <div>
-                <span className="text-[9px] font-black text-amber-650 dark:text-amber-400 tracking-wider uppercase block">PROFIL REKAM MEDIS TERDAFTAR</span>
+                <span className="text-[9px] font-black text-amber-600 dark:text-amber-400 tracking-wider uppercase block">PROFIL REKAM MEDIS TERDAFTAR</span>
                 <h2 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-2 mt-0.5 font-sans">
                   👋 Halo, <span className="bg-gradient-to-r from-amber-500 to-amber-600 dark:from-amber-300 dark:to-amber-500 bg-clip-text text-transparent">{patientData.nama_lengkap}</span>
                 </h2>
@@ -691,7 +691,7 @@ export default function KioskPage() {
                         <button
                           type="button"
                           onClick={() => handleDaftarLagi(visit)}
-                          className="px-4.5 py-3 rounded-xl bg-gradient-to-r from-red-650 to-rose-600 hover:from-red-750 hover:to-rose-700 text-[10px] font-black tracking-widest text-white shadow-md active:scale-95 transition-all shrink-0 cursor-pointer"
+                          className="px-4.5 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:brightness-110 text-[10px] font-black tracking-widest text-white shadow-md active:scale-95 transition-all shrink-0 cursor-pointer"
                         >
                           🔁 DAFTAR LAGI
                         </button>
@@ -731,7 +731,7 @@ export default function KioskPage() {
           <div className="w-full max-w-4xl rounded-[36px] bg-white dark:bg-[#1A202C]/90 backdrop-blur-2xl p-6.5 shadow-2xl border border-slate-200/80 dark:border-white/10 animate-fade-in flex flex-col gap-6 overflow-hidden max-h-[80vh]">
             
             <div className="text-center">
-              <span className="text-[9px] font-black text-amber-650 dark:text-amber-400 tracking-wider uppercase">SELEKSI LAYANAN MEDIS</span>
+              <span className="text-[9px] font-black text-amber-600 dark:text-amber-400 tracking-wider uppercase">SELEKSI LAYANAN MEDIS</span>
               <h2 className="text-2xl font-black text-slate-800 dark:text-white mt-1">Silakan Pilih Layanan Poliklinik</h2>
               <p className="text-xs text-slate-500 dark:text-slate-300 font-bold mt-1">Pilih Poliklinik tujuan pemeriksaan yang Anda kehendaki.</p>
             </div>
@@ -797,7 +797,7 @@ export default function KioskPage() {
           <div className="w-full max-w-4xl rounded-[36px] bg-white dark:bg-[#1A202C]/90 backdrop-blur-2xl p-6.5 shadow-2xl border border-slate-200/80 dark:border-white/10 animate-fade-in flex flex-col gap-6 overflow-hidden max-h-[80vh]">
             
             <div className="text-center">
-              <span className="text-[9px] font-black text-amber-650 dark:text-amber-400 tracking-wider uppercase">{selectedPoliName}</span>
+              <span className="text-[9px] font-black text-amber-600 dark:text-amber-400 tracking-wider uppercase">{selectedPoliName}</span>
               <h2 className="text-2xl font-black text-slate-800 dark:text-white mt-1">Pilih Dokter Spesialis</h2>
               <p className="text-xs text-slate-500 dark:text-slate-300 font-bold mt-1">Tentukan Dokter Spesialis bertugas yang akan melakukan pemeriksaan medis.</p>
             </div>
@@ -882,7 +882,7 @@ export default function KioskPage() {
           <div className="w-full max-w-4xl rounded-[36px] bg-white dark:bg-[#1A202C]/90 backdrop-blur-2xl p-6.5 shadow-2xl border border-slate-200/80 dark:border-white/10 animate-fade-in flex flex-col gap-6 overflow-hidden max-h-[80vh]">
             
             <div className="text-center">
-              <span className="text-[9px] font-black text-amber-650 dark:text-amber-400 tracking-wider uppercase">PROSES VERIFIKASI BIAYA</span>
+              <span className="text-[9px] font-black text-amber-600 dark:text-amber-400 tracking-wider uppercase">PROSES VERIFIKASI BIAYA</span>
               <h2 className="text-2xl font-black text-slate-800 dark:text-white mt-1">Pilih Metode Penjaminan Biaya</h2>
               <p className="text-xs text-slate-500 dark:text-slate-300 font-bold mt-1">Tentukan metode cara bayar penjamin yang akan digunakan untuk proses klaim administrasi.</p>
             </div>

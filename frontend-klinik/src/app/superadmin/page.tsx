@@ -48,7 +48,9 @@ export default function SuperadminPage() {
     { path: '/farmasi', label: '💊 Farmasi & Kasir', desc: 'Dispensing obat resep farmasi & penagihan pembayaran.' },
     { path: '/monitoring', label: '🖥️ Pengawasan Sesi', desc: 'Live monitoring log login-logout & audit transaksi medis.' },
     { path: '/superadmin', label: '⚙️ Panel Superadmin', desc: 'Konfigurasi hak akses menu & verifikasi aktivasi akun.' },
+    { path: '/superadmin/obat', label: '💊 Master Obat & Safety Check', desc: 'Kelola Zat Aktif, Produk Dagang, Stok Inventori, Harga, & Safety Alert Interaksi.' },
   ];
+
 
   // Fetch initial data
   const fetchData = async () => {
@@ -239,13 +241,22 @@ export default function SuperadminPage() {
               Portal wewenang Superadmin untuk mengatur pembatasan modul kerja pegawai, verifikasi aktivasi akun staf medis baru, dan audit penangguhan akun klinis secara real-time.
             </p>
           </div>
-          <button 
-            onClick={fetchData} 
-            disabled={loading}
-            className="relative z-10 self-start md:self-center flex items-center justify-center gap-1.5 rounded-xl border border-slate-200/80 bg-white hover:bg-slate-50 active:scale-95 text-xs font-bold text-slate-700 px-5 py-3 transition-all shadow-xs hover:shadow-sm cursor-pointer disabled:opacity-50 shrink-0 duration-200"
-          >
-            🔄 Sinkronkan Data
-          </button>
+          <div className="relative z-10 flex flex-wrap gap-3 self-start md:self-center shrink-0">
+            <button 
+              onClick={() => window.location.href = '/superadmin/obat'}
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 active:scale-95 text-xs font-bold text-red-700 px-5 py-3 transition-all shadow-xs hover:shadow-sm cursor-pointer duration-200"
+            >
+              💊 Master Obat & Safety
+            </button>
+            <button 
+              onClick={fetchData} 
+              disabled={loading}
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200/80 bg-white hover:bg-slate-50 active:scale-95 text-xs font-bold text-slate-700 px-5 py-3 transition-all shadow-xs hover:shadow-sm cursor-pointer disabled:opacity-50 shrink-0 duration-200"
+            >
+              🔄 Sinkronkan Data
+            </button>
+          </div>
+
         </div>
 
         {/* ================= TOAST NOTIFICATIONS CARD ================= */}
@@ -457,7 +468,7 @@ export default function SuperadminPage() {
                               <button
                                 onClick={() => handleVerifyAccount(p.id_pegawai, 'DITOLAK')}
                                 disabled={actionLoading !== null}
-                                className="inline-flex items-center justify-center gap-1 rounded-xl bg-red-650 hover:bg-red-500 text-white font-bold text-xs px-3.5 py-2.5 transition-all active:scale-95 disabled:opacity-50 cursor-pointer shadow-sm shadow-red-500/10"
+                                className="inline-flex items-center justify-center gap-1 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs px-3.5 py-2.5 transition-all active:scale-95 disabled:opacity-50 cursor-pointer shadow-sm shadow-red-500/10"
                               >
                                 {actionLoading === `verify-${p.id_pegawai}` ? '...' : '❌ Tolak'}
                               </button>

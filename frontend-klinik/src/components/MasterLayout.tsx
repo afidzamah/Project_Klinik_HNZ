@@ -122,11 +122,14 @@ export default function MasterLayout({ children }: { children: React.ReactNode }
       setMenuAkses(currentMenu);
       
       // Preliminary local route guard check to prevent flickering
-      if (currentMenu.length > 0 && !currentMenu.includes(pathname)) {
+      // Allow superadmin role to access superadmin subroutes without strict local blocking
+      const isSuperadminSubroute = pathname.startsWith('/superadmin') && parsedUser?.role === 'superadmin';
+      if (currentMenu.length > 0 && !currentMenu.includes(pathname) && !isSuperadminSubroute) {
         router.push(currentMenu[0]);
         return;
       }
     }
+
 
     // Verify token with backend
     fetch(`${API_URL}/auth/me`, {
@@ -150,9 +153,11 @@ export default function MasterLayout({ children }: { children: React.ReactNode }
         localStorage.setItem('menu_akses', JSON.stringify(fetchedMenu));
         
         // Enforce live route guard
-        if (fetchedMenu.length > 0 && !fetchedMenu.includes(pathname)) {
+        const isLiveSuperadminSubroute = pathname.startsWith('/superadmin') && data.user.role === 'superadmin';
+        if (fetchedMenu.length > 0 && !fetchedMenu.includes(pathname) && !isLiveSuperadminSubroute) {
           router.push(fetchedMenu[0]);
         } else if (fetchedMenu.length === 0) {
+
           // No menu access at all, sign out
           localStorage.removeItem('token');
           localStorage.removeItem('user');

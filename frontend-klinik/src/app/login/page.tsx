@@ -205,7 +205,7 @@ export default function RealLoginPage() {
       
       {/* 🌌 PREMIUM GLOWING MED-AMBIENT BACKLIGHT */}
       <div className="absolute top-[-30%] left-[-20%] h-[700px] w-[700px] rounded-full bg-rose-600/5 dark:bg-rose-600/10 blur-[130px] animate-pulse duration-10000" />
-      <div className="absolute bottom-[-30%] right-[-20%] h-[700px] w-[700px] rounded-full bg-red-650/5 dark:bg-red-650/10 blur-[130px] animate-pulse duration-7000" />
+      <div className="absolute bottom-[-30%] right-[-20%] h-[700px] w-[700px] rounded-full bg-red-600/5 dark:bg-red-600/10 blur-[130px] animate-pulse duration-7000" />
       <div className="absolute top-[20%] left-[30%] h-[500px] w-[500px] rounded-full bg-red-500/3 dark:bg-red-500/5 blur-[120px]" />
 
       {/* Floating Theme Toggle */}
@@ -222,14 +222,14 @@ export default function RealLoginPage() {
         <div className="grid grid-cols-1 md:grid-cols-12">
           
           {/* ================= PANEL KIRI: VISUAL BRANDING MEDIS (5-COLS) ================= */}
-          <div className="relative overflow-hidden md:col-span-5 bg-gradient-to-br from-red-700 via-red-600 to-rose-700 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 text-white dark:text-slate-100 transition-all duration-300">
+          <div className="relative overflow-hidden md:col-span-5 bg-gradient-to-br from-red-700 via-red-600 to-red-800 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 text-white dark:text-slate-100 transition-all duration-300">
             {/* Background pattern grid */}
             <div className="absolute inset-0 opacity-5 bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:16px_16px]" />
             
             {/* Left Top: Hospital Brand Identity */}
             <div className="relative z-10">
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 dark:bg-gradient-to-tr dark:from-red-605 dark:to-rose-605 shadow-md shadow-white/5 dark:shadow-red-500/20 ring-2 ring-white/20 dark:ring-red-500/20">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 dark:bg-gradient-to-tr dark:from-red-600 dark:to-red-700 shadow-md shadow-white/5 dark:shadow-red-500/20 ring-2 ring-white/20 dark:ring-red-500/20">
                   <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 10.5V20a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-9.5m14 0V9a2 2 0 0 0-2-2h-3.5M5 10.5V9a2 2 0 0 1 2-2h3.5m7.5 3.5V5a2 2 0 0 0-2-2h-3.5M5 10.5V5a2 2 0 0 1 2-2h3.5m0 0V9a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V3" />
                   </svg>
@@ -317,7 +317,7 @@ export default function RealLoginPage() {
                 onClick={() => setActiveTab('login')}
                 className={`flex-1 rounded-lg py-3 text-center text-xs font-black tracking-wide uppercase transition-all duration-300 cursor-pointer ${
                   activeTab === 'login'
-                    ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-650/15'
+                    ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-600/15'
                     : 'text-slate-650 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
@@ -327,7 +327,7 @@ export default function RealLoginPage() {
                 onClick={() => setActiveTab('register')}
                 className={`flex-1 rounded-lg py-3 text-center text-xs font-black tracking-wide uppercase transition-all duration-300 cursor-pointer ${
                   activeTab === 'register'
-                    ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-650/15'
+                    ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-600/15'
                     : 'text-slate-650 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
@@ -440,7 +440,7 @@ export default function RealLoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-xl bg-gradient-to-r from-red-600 via-red-650 to-rose-600 py-4 text-xs font-black tracking-widest uppercase text-white shadow-xl shadow-red-600/10 hover:brightness-110 active:scale-98 disabled:brightness-50 flex items-center justify-center gap-2.5 cursor-pointer mt-6"
+                  className="w-full rounded-xl bg-gradient-to-r from-red-600 to-red-700 py-4 text-xs font-black tracking-widest uppercase text-white shadow-xl shadow-red-600/10 hover:brightness-110 active:scale-98 disabled:brightness-50 flex items-center justify-center gap-2.5 cursor-pointer mt-6"
                 >
                   {loading ? (
                     <>
@@ -581,7 +581,7 @@ export default function RealLoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-xl bg-gradient-to-r from-red-600 via-red-650 to-rose-600 py-3.5 text-xs font-black tracking-widest uppercase text-white shadow-xl shadow-red-600/10 hover:brightness-110 active:scale-98 disabled:brightness-50 flex items-center justify-center gap-2 cursor-pointer mt-4"
+                  className="w-full rounded-xl bg-gradient-to-r from-red-600 to-red-700 py-3.5 text-xs font-black tracking-widest uppercase text-white shadow-xl shadow-red-600/10 hover:brightness-110 active:scale-98 disabled:brightness-50 flex items-center justify-center gap-2 cursor-pointer mt-4"
                 >
                   {loading ? (
                     <>

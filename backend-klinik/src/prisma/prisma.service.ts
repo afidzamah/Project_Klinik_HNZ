@@ -7,7 +7,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor() {
     // Aturan baru Prisma 7: Wajib menggunakan adapter untuk koneksi database
-    const connectionString = 'postgresql://postgres:postgres@localhost:5432/klinik_hnz?schema=public';
+    const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/klinik_hnz?schema=public';
     const pool = new Pool({ connectionString });
     const adapter = new PrismaPg(pool);
     

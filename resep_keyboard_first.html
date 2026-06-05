@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Resep — Keyboard First</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #F2F1EE;
+  font-size: 13px;
+  color: #1C1B18;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+/* TOPBAR */
+.topbar {
+  background: #1C1B18;
+  border-radius: 10px 10px 0 0;
+  padding: 0 16px;
+  height: 44px;
+  display: flex; align-items: center; gap: 12px;
+}
+.tb-logo { font-size: 12px; font-weight: 500; color: #C4C1B6; }
+.tb-sep { width: 0.5px; height: 16px; background: #2E2D2A; }
+.tb-pt { display: flex; align-items: center; gap: 8px; }
+.tb-av { width: 24px; height: 24px; border-radius: 50%; background: #2E3A52; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #7BC0F7; }
+.tb-pname { font-size: 12px; font-weight: 500; color: #E0DDCF; }
+.tb-pmeta { font-size: 10px; color: #5A5A52; }
+.tb-allergy { display: flex; align-items: center; gap: 5px; background: #3A1F1F; border: 0.5px solid #7A2020; border-radius: 20px; padding: 3px 9px; font-size: 11px; color: #F7C1C1; margin-left: auto; }
+.tb-send { font-size: 12px; font-weight: 500; padding: 5px 14px; border-radius: 6px; background: #166534; border: none; color: #fff; cursor: pointer; font-family: inherit; margin-left: 8px; }
+.tb-draft { font-size: 12px; font-weight: 500; padding: 5px 14px; border-radius: 6px; background: transparent; border: 0.5px solid #3A3A36; color: #8A8879; cursor: pointer; font-family: inherit; }
+
+/* MAIN CARD */
+.main-card {
+  background: #fff;
+  border-radius: 0 0 10px 10px;
+  border: 0.5px solid #E4E2DA;
+  border-top: none;
+  overflow: hidden;
+}
+
+/* HEADER ROW */
+.rx-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 16px;
+  border-bottom: 0.5px solid #E4E2DA;
+  background: #FAFAF8;
+}
+.rx-title { font-size: 13px; font-weight: 600; }
+.rx-meta { font-size: 11px; color: #8A8879; }
+.rx-actions { display: flex; gap: 6px; align-items: center; }
+.kbd-hint { font-size: 10.5px; color: #8A8879; display: flex; align-items: center; gap: 6px; }
+.kbd { display: inline-block; background: #F2F1EE; border: 0.5px solid #D8D6CE; border-radius: 4px; padding: 1px 5px; font-size: 10px; font-family: monospace; color: #5A5A52; }
+
+/* CARRY BANNER */
+.carry {
+  background: #EEF2FF; border-bottom: 0.5px solid #C7D2FE;
+  padding: 7px 16px; display: flex; align-items: center; gap: 8px;
+  font-size: 11.5px; color: #3730A3;
+}
+.carry-btn { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 5px; background: #3730A3; color: #fff; border: none; cursor: pointer; font-family: inherit; margin-left: 4px; }
+
+/* TABLE */
+.tbl-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+col.c-no    { width: 36px; }
+col.c-obat  { width: 240px; }
+col.c-dosis { width: 110px; }
+col.c-rute  { width: 100px; }
+col.c-freq  { width: 110px; }
+col.c-dur   { width: 80px; }
+col.c-jml   { width: 72px; }
+col.c-catatan { width: auto; }
+col.c-act   { width: 40px; }
+
+thead th {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
+  color: #9A9888; font-weight: 600;
+  background: #FAFAF8;
+  padding: 7px 8px;
+  border-bottom: 0.5px solid #E4E2DA;
+  text-align: left;
+  position: sticky; top: 0; z-index: 2;
+  white-space: nowrap;
+}
+thead th:first-child { text-align: center; padding-left: 12px; }
+
+tbody tr { border-bottom: 0.5px solid #F2F1EE; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #FAFAF8; }
+tbody tr.row-focused { background: #F0F6FF; }
+tbody tr.row-warn { background: #FFFBEB; }
+tbody tr.row-warn.row-focused { background: #FEF9C3; }
+tbody tr.row-danger { background: #FFF8F8; }
+tbody tr.row-danger.row-focused { background: #FEE2E2; }
+
+td {
+  padding: 0;
+  vertical-align: middle;
+  position: relative;
+}
+td.td-no {
+  text-align: center;
+  font-size: 11px; color: #B0ADA0;
+  font-family: monospace;
+  padding: 0 4px;
+  width: 36px;
+}
+td .flag-icon {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  font-size: 13px; cursor: help;
+}
+
+/* CELL INPUT */
+.cell-input {
+  width: 100%; height: 36px;
+  font-family: inherit; font-size: 12.5px; color: #1C1B18;
+  background: transparent; border: none; outline: none;
+  padding: 0 8px;
+  cursor: default;
+}
+.cell-input:focus {
+  background: #fff;
+  box-shadow: inset 0 0 0 2px #2563EB;
+  border-radius: 4px;
+  cursor: text;
+  z-index: 3;
+  position: relative;
+}
+.cell-input.auto-val {
+  color: #5A5A52;
+  background: #F7F6F3;
+}
+.cell-input.auto-val:focus {
+  background: #F0F6FF;
+  box-shadow: inset 0 0 0 2px #93C5FD;
+}
+select.cell-input {
+  cursor: default;
+  appearance: none;
+  -webkit-appearance: none;
+}
+select.cell-input:focus { cursor: pointer; }
+
+/* AUTOCOMPLETE */
+.ac-wrap { position: relative; }
+.ac-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  min-width: 320px;
+  max-width: 420px;
+  background: #fff;
+  border: 0.5px solid #D8D6CE;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.10);
+  z-index: 100;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.ac-dropdown.open { display: block; }
+.ac-item {
+  padding: 7px 11px;
+  cursor: pointer;
+  border-bottom: 0.5px solid #F2F1EE;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.ac-item:last-child { border-bottom: none; }
+.ac-item:hover, .ac-item.ac-active { background: #EEF2FF; }
+.ac-item-main { flex: 1; }
+.ac-item-name { font-size: 12.5px; font-weight: 500; color: #1C1B18; }
+.ac-item-detail { font-size: 11px; color: #8A8879; margin-top: 1px; }
+.ac-item-badge {
+  font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 500;
+  white-space: nowrap; align-self: flex-start; margin-top: 1px;
+}
+.badge-generik { background: #DCFCE7; color: #166534; }
+.badge-paten   { background: #EEF2FF; color: #3730A3; }
+.badge-bpjs    { background: #FEF9C3; color: #854D0E; }
+.badge-habis   { background: #FEE2E2; color: #991B1B; }
+.ac-section-label {
+  padding: 6px 11px 3px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
+  color: #B0ADA0; font-weight: 600;
+  background: #FAFAF8;
+  border-bottom: 0.5px solid #F2F1EE;
+  position: sticky; top: 0;
+}
+
+/* FLAG INLINE */
+.flag-cell { padding: 0 8px; display: flex; align-items: center; gap: 5px; height: 36px; }
+.flag-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.flag-ok   { background: #22C55E; }
+.flag-warn { background: #F59E0B; }
+.flag-danger { background: #EF4444; }
+
+/* INTERACTION PANEL */
+.interaction-panel {
+  border-top: 0.5px solid #E4E2DA;
+  background: #FFFBEB;
+  padding: 10px 16px;
+  display: none;
+}
+.interaction-panel.has-warn { display: block; }
+.ip-title { font-size: 11px; font-weight: 600; color: #854D0E; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.ip-rows { display: flex; flex-direction: column; gap: 5px; }
+.ip-row { display: flex; align-items: flex-start; gap: 8px; font-size: 11.5px; }
+.ip-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.ip-text { color: #5A5A52; line-height: 1.4; }
+.ip-text strong { color: #1C1B18; }
+
+/* SUMMARY ROW */
+.summary-row {
+  padding: 10px 16px;
+  border-top: 0.5px solid #E4E2DA;
+  background: #FAFAF8;
+  display: flex; align-items: center; gap: 16px;
+}
+.sum-item { font-size: 11.5px; color: #5A5A52; }
+.sum-item strong { color: #1C1B18; font-weight: 600; }
+.add-row-btn {
+  font-size: 12px; font-weight: 500; color: #2563EB;
+  background: transparent; border: none; cursor: pointer;
+  display: flex; align-items: center; gap: 5px;
+  font-family: inherit; padding: 4px 0;
+}
+.add-row-btn:hover { text-decoration: underline; }
+
+/* DELETE BTN */
+.del-btn {
+  width: 28px; height: 36px;
+  background: transparent; border: none; cursor: pointer;
+  color: #C8C5BC; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 4px;
+}
+.del-btn:hover { background: #FEE2E2; color: #DC2626; }
+
+/* TOOLTIP */
+.tooltip-wrap { position: relative; display: inline-block; }
+.tooltip-content {
+  display: none;
+  position: absolute; bottom: calc(100% + 6px); left: 50%;
+  transform: translateX(-50%);
+  background: #1C1B18; color: #F0EDE6;
+  font-size: 11px; padding: 5px 9px; border-radius: 6px;
+  white-space: nowrap; z-index: 200;
+  pointer-events: none;
+}
+.tooltip-wrap:hover .tooltip-content { display: block; }
+
+/* MAPPING PREVIEW */
+.map-preview {
+  border-top: 0.5px solid #E4E2DA;
+  padding: 10px 16px;
+  background: #F0F6FF;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11.5px; color: #3730A3;
+}
+.map-preview strong { color: #1D4ED8; }
+.map-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #DBEAFE; color: #1D4ED8; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="tb-logo">Brawijaya Hospital</span>
+  <div class="tb-sep"></div>
+  <div class="tb-pt">
+    <div class="tb-av">SA</div>
+    <div>
+      <div class="tb-pname">Siti Aminah · F 45th · BPJS</div>
+      <div class="tb-pmeta">Poli Interna · dr. Raka · 26 Mei 2026</div>
+    </div>
+  </div>
+  <div class="tb-allergy">⚠ Alergi: Penisilin</div>
+  <button class="tb-draft">Simpan Draft</button>
+  <button class="tb-send" onclick="sendResep()">Kirim ke Farmasi</button>
+</div>
+
+<div class="main-card">
+
+  <div class="rx-header">
+    <div>
+      <div class="rx-title">Resep Elektronik</div>
+      <div class="rx-meta">Farmasi akan mapping ke produk stok — dokter cukup input zat aktif & dosis</div>
+    </div>
+    <div class="rx-actions">
+      <div class="kbd-hint">
+        <span><span class="kbd">Tab</span> pindah kolom</span>
+        <span><span class="kbd">Enter</span> baris baru</span>
+        <span><span class="kbd">↑↓</span> pilih obat</span>
+        <span><span class="kbd">Ctrl+D</span> duplikasi baris</span>
+        <span><span class="kbd">Del</span> hapus baris</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="carry">
+    ✦ Resep bulan lalu tersedia (3 obat)
+    <button class="carry-btn" onclick="loadPrev()">Salin semua ↗</button>
+    <span style="margin-left:8px;font-size:10.5px;color:#4338CA">Lanjut edit setelah disalin</span>
+  </div>
+
+  <div class="tbl-wrap">
+    <table id="rx-table">
+      <colgroup>
+        <col class="c-no">
+        <col class="c-obat">
+        <col class="c-dosis">
+        <col class="c-rute">
+        <col class="c-freq">
+        <col class="c-dur">
+        <col class="c-jml">
+        <col class="c-catatan">
+        <col class="c-act">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Zat aktif / nama obat</th>
+          <th>Dosis</th>
+          <th>Rute</th>
+          <th>Frekuensi</th>
+          <th>Durasi</th>
+          <th>Jml ⚡</th>
+          <th>Catatan</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="rx-body">
+      </tbody>
+    </table>
+  </div>
+
+  <div class="summary-row">
+    <button class="add-row-btn" onclick="addRow()">+ Tambah obat &nbsp;<span class="kbd">Enter</span> di baris terakhir</button>
+    <div style="flex:1"></div>
+    <div class="sum-item">Total baris: <strong id="row-count">0</strong></div>
+    <div class="sum-item">Interaksi: <strong id="warn-count" style="color:#DC2626">0</strong></div>
+  </div>
+
+  <div class="interaction-panel" id="interaction-panel">
+    <div class="ip-title">⚠ Perhatian interaksi & keamanan obat</div>
+    <div class="ip-rows" id="interaction-rows"></div>
+  </div>
+
+  <div class="map-preview" id="map-preview" style="display:none">
+    <span>📦 Farmasi akan mapping ke:</span>
+    <span id="map-text"></span>
+    <span class="map-badge">Auto-mapping aktif</span>
+    <span style="flex:1"></span>
+    <span style="font-size:10.5px;color:#3730A3">Farmasi bisa override jika stok tidak tersedia</span>
+  </div>
+
+</div>
+
+<script>
+var DB = {
+  obat: [
+    { id:1, zat:'Amoxicillin', dosis:'500mg', rute:'oral', freq:'3x1', tipe:'generik', stok:true,  bpjs:true,  interaksi:[], produk:'Amoxicillin 500mg — Generik BPJS' },
+    { id:2, zat:'Amoxicillin', dosis:'500mg', rute:'oral', freq:'3x1', tipe:'paten',   stok:true,  bpjs:false, interaksi:[], produk:'Amoxan 500mg — Sanbe' },
+    { id:3, zat:'Amoxicillin', dosis:'250mg', rute:'oral', freq:'3x1', tipe:'generik', stok:true,  bpjs:true,  interaksi:[], produk:'Amoxicillin 250mg — Generik BPJS' },
+    { id:4, zat:'Amlodipine',  dosis:'5mg',  rute:'oral', freq:'1x1', tipe:'generik', stok:true,  bpjs:true,  interaksi:[], produk:'Amlodipine 5mg — Generik BPJS' },
+    { id:5, zat:'Amlodipine',  dosis:'10mg', rute:'oral', freq:'1x1', tipe:'generik', stok:true,  bpjs:true,  interaksi:[], produk:'Amlodipine 10mg — Generik BPJS' },
+    { id:6, zat:'Amlodipine',  dosis:'5mg',  rute:'oral', freq:'1x1', tipe:'paten',   stok:false, bpjs:false, interaksi:[], produk:'Norvasc 5mg — Pfizer (stok habis)' },
+    { id:7, zat:'Metformin',   dosis:'500mg',rute:'oral', freq:'2x1', tipe:'generik', stok:true,  bpjs:true,  interaksi:[], produk:'Metformin 500mg — Generik BPJS' },
+    { id:8, zat:'Metformin',   dosis:'850mg',rute:'oral', freq:'2x1', tipe:'generik', stok:true,  bpjs:true,  interaksi:[], produk:'Metformin 850mg — Generik BPJS' },
+    { id:9, zat:'Atorvastatin',dosis:'20mg', rute:'oral', freq:'1x1', tipe:'generik', stok:true,  bpjs:true,  interaksi:[{with:'Amoxicillin',msg:'Tidak ada interaksi bermakna'}], produk:'Atorvastatin 20mg — Generik BPJS' },
+    { id:10,zat:'Captopril',   dosis:'12.5mg',rute:'oral',freq:'2x1',tipe:'generik', stok:true,  bpjs:true,  interaksi:[{with:'Amlodipine',msg:'Kombinasi antihipertensi — pantau TD secara ketat, risiko hipotensi'}], produk:'Captopril 12.5mg — Generik BPJS' },
+    { id:11,zat:'Omeprazole',  dosis:'20mg', rute:'oral', freq:'1x1', tipe:'generik', stok:true,  bpjs:true,  interaksi:[], produk:'Omeprazole 20mg — Generik BPJS' },
+    { id:12,zat:'Ketorolac',   dosis:'30mg', rute:'oral', freq:'3x1', tipe:'generik', stok:true,  bpjs:false, interaksi:[{with:'*',msg:'⚠ NSAID — konfirmasi toleransi pasien (alergi Penisilin perlu diwaspadai silang)'}], produk:'Ketorolac 30mg — Generik' },
+    { id:13,zat:'Cetirizine',  dosis:'10mg', rute:'oral', freq:'1x1', tipe:'generik', stok:true,  bpjs:true,  interaksi:[], produk:'Cetirizine 10mg — Generik BPJS' },
+    { id:14,zat:'Ranitidin',   dosis:'150mg',rute:'oral', freq:'2x1', tipe:'generik', stok:true,  bpjs:true,  interaksi:[], produk:'Ranitidin 150mg — Generik BPJS' },
+  ],
+  rute: ['oral','sublingual','IV','IM','SC','topikal','inhalasi','suppositoria'],
+  freq: ['1x1','2x1','3x1','4x1','1x½','2x½','3x½','setiap 8 jam','setiap 12 jam','setiap 24 jam','prn (jika perlu)'],
+};
+
+var rows = [];
+var focusedRow = -1;
+var focusedCol = -1;
+var acIndex = -1;
+var acResults = [];
+var prevResep = [
+  { zat:'Amlodipine 5mg', dosis:'5mg', rute:'oral', freq:'1x1', dur:'30', catatan:'Lanjut dari bulan lalu' },
+  { zat:'Metformin 500mg', dosis:'500mg', rute:'oral', freq:'2x1', dur:'30', catatan:'Lanjut' },
+  { zat:'Atorvastatin 20mg', dosis:'20mg', rute:'oral', freq:'1x1', dur:'30', catatan:'Malam hari' },
+];
+
+function createRow(data) {
+  return {
+    id: Date.now() + Math.random(),
+    zat: data&&data.zat || '',
+    dosis: data&&data.dosis || '',
+    rute: data&&data.rute || 'oral',
+    freq: data&&data.freq || '',
+    dur: data&&data.dur || '',
+    jml: data&&data.jml || '',
+    catatan: data&&data.catatan || '',
+    flag: 'ok',
+    flagMsg: '',
+    dbItem: null,
+  };
+}
+
+function init() {
+  addRow(); addRow(); addRow();
+  render();
+  setTimeout(function(){ focusCell(0,1); }, 100);
+}
+
+function addRow(data) {
+  rows.push(createRow(data));
+  render();
+  var lastIdx = rows.length - 1;
+  setTimeout(function(){ focusCell(lastIdx, 1); }, 50);
+}
+
+function deleteRow(idx) {
+  if(rows.length <= 1) return;
+  rows.splice(idx, 1);
+  render();
+  checkInteractions();
+}
+
+function loadPrev() {
+  rows = [];
+  prevResep.forEach(function(p){ rows.push(createRow(p)); });
+  rows.push(createRow(null));
+  render();
+  checkInteractions();
+  setTimeout(function(){ focusCell(rows.length-1, 1); }, 50);
+}
+
+function render() {
+  var tbody = document.getElementById('rx-body');
+  tbody.innerHTML = '';
+  rows.forEach(function(row, i) {
+    var tr = document.createElement('tr');
+    tr.id = 'row-'+i;
+    tr.className = row.flag==='warn' ? 'row-warn' : row.flag==='danger' ? 'row-danger' : '';
+    if(i===focusedRow) tr.classList.add('row-focused');
+
+    tr.innerHTML =
+      '<td class="td-no">'+(i+1)+'</td>'+
+      '<td><div class="ac-wrap">'+
+        '<input class="cell-input" id="inp-'+i+'-1" data-row="'+i+'" data-col="1" value="'+esc(row.zat)+'" placeholder="Ketik nama obat..." autocomplete="off">'+
+        '<div class="ac-dropdown" id="ac-'+i+'"></div>'+
+      '</div></td>'+
+      '<td><input class="cell-input" id="inp-'+i+'-2" data-row="'+i+'" data-col="2" value="'+esc(row.dosis)+'" placeholder="mis. 500mg"></td>'+
+      '<td><select class="cell-input" id="inp-'+i+'-3" data-row="'+i+'" data-col="3">'+
+        DB.rute.map(function(r){ return '<option'+(r===row.rute?' selected':'')+'>'+r+'</option>'; }).join('')+
+      '</select></td>'+
+      '<td><input class="cell-input" id="inp-'+i+'-4" data-row="'+i+'" data-col="4" value="'+esc(row.freq)+'" placeholder="mis. 3x1" list="freq-list"></td>'+
+      '<td><input class="cell-input" id="inp-'+i+'-5" data-row="'+i+'" data-col="5" value="'+esc(row.dur)+'" placeholder="hari"></td>'+
+      '<td><input class="cell-input auto-val" id="inp-'+i+'-6" data-row="'+i+'" data-col="6" value="'+calcJml(row)+'" readonly tabindex="-1" title="Auto-kalkulasi dari frekuensi × durasi"></td>'+
+      '<td><input class="cell-input" id="inp-'+i+'-7" data-row="'+i+'" data-col="7" value="'+esc(row.catatan)+'" placeholder="catatan opsional...">'+
+        (row.flag!=='ok' ? '<span class="flag-icon tooltip-wrap">'+(row.flag==='warn'?'⚠':'🚫')+'<span class="tooltip-content">'+esc(row.flagMsg)+'</span></span>' : '')+
+      '</td>'+
+      '<td><button class="del-btn" onclick="deleteRow('+i+')" title="Hapus baris (Delete)">×</button></td>';
+
+    tbody.appendChild(tr);
+    bindRow(i);
+  });
+
+  document.getElementById('row-count').textContent = rows.filter(function(r){ return r.zat; }).length;
+  updateSummary();
+}
+
+function esc(s) { return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function bindRow(i) {
+  var cols = [1,2,3,4,5,7];
+  cols.forEach(function(c) {
+    var inp = document.getElementById('inp-'+i+'-'+c);
+    if(!inp) return;
+    inp.addEventListener('focus', function(){ focusedRow=i; focusedCol=c; markFocus(i); });
+    inp.addEventListener('input', function(){ onInput(i,c,this.value); });
+    inp.addEventListener('keydown', function(e){ onKeydown(e,i,c); });
+    inp.addEventListener('blur', function(){ onBlur(i,c); });
+  });
+  var sel = document.getElementById('inp-'+i+'-3');
+  if(sel) {
+    sel.addEventListener('focus', function(){ focusedRow=i; focusedCol=3; markFocus(i); });
+    sel.addEventListener('change', function(){ rows[i].rute=this.value; autoCalc(i); });
+    sel.addEventListener('keydown', function(e){ onKeydown(e,i,3); });
+  }
+}
+
+function markFocus(i) {
+  document.querySelectorAll('tbody tr').forEach(function(tr){ tr.classList.remove('row-focused'); });
+  var tr = document.getElementById('row-'+i);
+  if(tr) tr.classList.add('row-focused');
+}
+
+function onInput(i,c,val) {
+  if(c===1) { rows[i].zat=val; showAC(i,val); }
+  else if(c===2) { rows[i].dosis=val; autoCalc(i); }
+  else if(c===4) { rows[i].freq=val; autoCalc(i); }
+  else if(c===5) { rows[i].dur=val; autoCalc(i); }
+  else if(c===7) { rows[i].catatan=val; }
+}
+
+function onBlur(i,c) {
+  if(c===1) {
+    setTimeout(function(){
+      var ac = document.getElementById('ac-'+i);
+      if(ac) ac.classList.remove('open');
+    }, 180);
+  }
+}
+
+function onKeydown(e,i,c) {
+  var ac = document.getElementById('ac-'+i);
+  var acOpen = ac && ac.classList.contains('open');
+
+  if(acOpen) {
+    if(e.key==='ArrowDown') { e.preventDefault(); acIndex=Math.min(acIndex+1,acResults.length-1); highlightAC(i); return; }
+    if(e.key==='ArrowUp')   { e.preventDefault(); acIndex=Math.max(acIndex-1,0); highlightAC(i); return; }
+    if(e.key==='Enter' || e.key==='Tab') {
+      if(acIndex>=0 && acResults[acIndex]) {
+        e.preventDefault();
+        selectAC(i, acResults[acIndex]);
+        return;
+      }
+    }
+    if(e.key==='Escape') { ac.classList.remove('open'); return; }
+  }
+
+  if(e.key==='Tab') {
+    e.preventDefault();
+    var cols = [1,2,3,4,5,7];
+    var ci = cols.indexOf(c);
+    if(e.shiftKey) {
+      if(ci>0) focusCell(i, cols[ci-1]);
+      else if(i>0) focusCell(i-1, cols[cols.length-1]);
+    } else {
+      if(ci<cols.length-1) focusCell(i, cols[ci+1]);
+      else {
+        if(i<rows.length-1) focusCell(i+1, cols[0]);
+        else { addRow(); }
+      }
+    }
+    return;
+  }
+
+  if(e.key==='Enter' && !acOpen) {
+    e.preventDefault();
+    if(i<rows.length-1) focusCell(i+1,1);
+    else addRow();
+    return;
+  }
+
+  if(e.key==='Delete' && c===1 && !rows[i].zat) {
+    e.preventDefault(); deleteRow(i); return;
+  }
+
+  if((e.ctrlKey||e.metaKey) && e.key==='d') {
+    e.preventDefault();
+    var copy = Object.assign({}, rows[i]);
+    copy.id = Date.now()+Math.random();
+    rows.splice(i+1,0,copy);
+    render();
+    checkInteractions();
+    setTimeout(function(){ focusCell(i+1,1); },50);
+    return;
+  }
+}
+
+function focusCell(r,c) {
+  focusedRow=r; focusedCol=c;
+  markFocus(r);
+  var inp = document.getElementById('inp-'+r+'-'+c);
+  if(inp) { inp.focus(); if(inp.select) inp.select(); }
+}
+
+function showAC(i, val) {
+  var ac = document.getElementById('ac-'+i);
+  if(!val || val.length<2) { ac.classList.remove('open'); return; }
+  var q = val.toLowerCase();
+  acResults = DB.obat.filter(function(o){ return o.zat.toLowerCase().includes(q); });
+  acIndex = acResults.length>0 ? 0 : -1;
+  if(!acResults.length) { ac.classList.remove('open'); return; }
+
+  var generik = acResults.filter(function(o){ return o.tipe==='generik' && o.stok; });
+  var paten   = acResults.filter(function(o){ return o.tipe==='paten'; });
+
+  var html = '';
+  if(generik.length) {
+    html += '<div class="ac-section-label">Generik / BPJS — diprioritaskan</div>';
+    generik.forEach(function(o,idx){
+      html += acItemHtml(o, acResults.indexOf(o));
+    });
+  }
+  if(paten.length) {
+    html += '<div class="ac-section-label">Paten / branded</div>';
+    paten.forEach(function(o){
+      html += acItemHtml(o, acResults.indexOf(o));
+    });
+  }
+  ac.innerHTML = html;
+  ac.classList.add('open');
+  highlightAC(i);
+  ac.querySelectorAll('.ac-item').forEach(function(el,idx){
+    el.addEventListener('mousedown', function(e){ e.preventDefault(); selectAC(i, acResults[idx]); });
+  });
+}
+
+function acItemHtml(o, idx) {
+  var badge = o.tipe==='generik' ? (o.bpjs?'<span class="ac-item-badge badge-bpjs">BPJS</span>':'<span class="ac-item-badge badge-generik">Generik</span>') : '<span class="ac-item-badge badge-paten">Paten</span>';
+  if(!o.stok) badge = '<span class="ac-item-badge badge-habis">Stok habis</span>';
+  return '<div class="ac-item" data-idx="'+idx+'">'+
+    '<div class="ac-item-main">'+
+      '<div class="ac-item-name">'+o.zat+' '+o.dosis+'</div>'+
+      '<div class="ac-item-detail">'+o.produk+'</div>'+
+    '</div>'+badge+
+  '</div>';
+}
+
+function highlightAC(i) {
+  var ac = document.getElementById('ac-'+i);
+  if(!ac) return;
+  ac.querySelectorAll('.ac-item').forEach(function(el,idx){
+    el.classList.toggle('ac-active', idx===acIndex);
+  });
+}
+
+function selectAC(i, item) {
+  rows[i].zat   = item.zat+' '+item.dosis;
+  rows[i].dosis = item.dosis;
+  rows[i].rute  = item.rute;
+  rows[i].freq  = item.freq;
+  rows[i].dbItem = item;
+  autoCalc(i);
+  checkInteractions();
+  var ac = document.getElementById('ac-'+i);
+  if(ac) ac.classList.remove('open');
+  render();
+  setTimeout(function(){ focusCell(i,4); },30);
+  updateMapPreview();
+}
+
+function calcJml(row) {
+  if(!row.freq || !row.dur) return '';
+  var freqMap = {'1x1':1,'2x1':2,'3x1':3,'4x1':4,'1x½':0.5,'2x½':1,'3x½':1.5,'setiap 8 jam':3,'setiap 12 jam':2,'setiap 24 jam':1};
+  var f = freqMap[row.freq];
+  var d = parseInt(row.dur);
+  if(!f || !d) return '';
+  var total = Math.ceil(f * d);
+  return total + ' tab';
+}
+
+function autoCalc(i) {
+  rows[i].jml = calcJml(rows[i]);
+  var inp = document.getElementById('inp-'+i+'-6');
+  if(inp) inp.value = rows[i].jml;
+}
+
+function checkInteractions() {
+  var warnings = [];
+  rows.forEach(function(r,i){
+    r.flag = 'ok'; r.flagMsg = '';
+    if(!r.zat) return;
+    if(r.zat.toLowerCase().includes('penisilin') || r.zat.toLowerCase().includes('ampicillin') || r.zat.toLowerCase().includes('amoxicillin')) {
+      r.flag = 'danger';
+      r.flagMsg = 'Pasien alergi Penisilin — waspadai cross-reactivity dengan Amoxicillin/Ampicillin!';
+      warnings.push({ level:'danger', text: '<strong>'+r.zat+'</strong> — pasien alergi Penisilin, risiko cross-reactivity. Konfirmasi ke dokter.' });
+    }
+    if(r.dbItem && r.dbItem.interaksi) {
+      r.dbItem.interaksi.forEach(function(ix){
+        if(ix.with==='*') {
+          r.flag = r.flag==='danger' ? 'danger' : 'warn';
+          r.flagMsg = (r.flagMsg?r.flagMsg+' | ':'')+ix.msg;
+          warnings.push({ level:'warn', text: '<strong>'+r.zat+'</strong>: '+ix.msg });
+        } else {
+          rows.forEach(function(r2,j){
+            if(i!==j && r2.zat && r2.zat.toLowerCase().includes(ix.with.toLowerCase())) {
+              r.flag = r.flag==='danger' ? 'danger' : 'warn';
+              r.flagMsg = (r.flagMsg?r.flagMsg+' | ':'')+'Interaksi dengan '+r2.zat+': '+ix.msg;
+              warnings.push({ level:'warn', text: '<strong>'+r.zat+'</strong> + <strong>'+r2.zat+'</strong>: '+ix.msg });
+            }
+          });
+        }
+      });
+    }
+  });
+
+  var panel = document.getElementById('interaction-panel');
+  var irows = document.getElementById('interaction-rows');
+  if(warnings.length) {
+    panel.classList.add('has-warn');
+    irows.innerHTML = warnings.map(function(w){
+      return '<div class="ip-row"><div class="ip-dot" style="background:'+(w.level==='danger'?'#EF4444':'#F59E0B')+'"></div><div class="ip-text">'+w.text+'</div></div>';
+    }).join('');
+  } else {
+    panel.classList.remove('has-warn');
+  }
+  document.getElementById('warn-count').textContent = warnings.length;
+  render();
+}
+
+function updateMapPreview() {
+  var mapped = rows.filter(function(r){ return r.dbItem && r.dbItem.produk; });
+  if(!mapped.length) { document.getElementById('map-preview').style.display='none'; return; }
+  document.getElementById('map-preview').style.display='flex';
+  document.getElementById('map-text').innerHTML = mapped.slice(0,2).map(function(r){
+    return '<span style="background:#DBEAFE;color:#1D4ED8;border-radius:5px;padding:2px 7px;font-size:11px;margin-right:4px">'+r.dbItem.produk+'</span>';
+  }).join('')+(mapped.length>2?'<span style="font-size:11px;color:#3730A3">+'+( mapped.length-2)+' lainnya</span>':'');
+}
+
+function updateSummary() {
+  var warns = rows.filter(function(r){ return r.flag!=='ok'; }).length;
+  document.getElementById('warn-count').textContent = warns;
+  document.getElementById('row-count').textContent = rows.filter(function(r){ return r.zat; }).length;
+}
+
+function sendResep() {
+  var filled = rows.filter(function(r){ return r.zat && r.dosis; });
+  if(!filled.length) { alert('Isi minimal satu baris obat terlebih dahulu.'); return; }
+  var warns = rows.filter(function(r){ return r.flag==='danger'; });
+  if(warns.length) {
+    if(!confirm('Ada '+warns.length+' peringatan keamanan (merah). Lanjutkan kirim ke farmasi?')) return;
+  }
+  alert('Resep dikirim ke farmasi!\n\n'+filled.length+' obat\nFarmasi akan mapping ke produk stok dan verifikasi.\n\nPasien dipersilakan ke farmasi.');
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  var dl = document.createElement('datalist');
+  dl.id = 'freq-list';
+  DB.freq.forEach(function(f){ var o=document.createElement('option'); o.value=f; dl.appendChild(o); });
+  document.body.appendChild(dl);
+  init();
+});
+</script>
+</body>
+</html>

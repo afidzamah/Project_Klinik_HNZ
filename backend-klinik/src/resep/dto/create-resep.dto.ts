@@ -5,6 +5,9 @@ class ResepItemDto {
   @ApiProperty({ example: 'ID_OBAT_PARACETAMOL', description: 'ID Master Obat' })
   id_obat: string;
 
+  @ApiProperty({ example: 'R/ Puyer Racikan', description: 'Nama obat jika kustom/racikan', required: false })
+  nama_obat?: string;
+
   @ApiProperty({ example: 10, description: 'Jumlah obat yang diberikan' })
   jumlah: number;
 

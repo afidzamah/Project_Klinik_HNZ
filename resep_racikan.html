@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resep Racikan — Dokter & Farmasi</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F2F1EE;
+  --surface: #fff;
+  --surface2: #F7F6F3;
+  --border: #E4E2DA;
+  --border2: #CCCABC;
+  --text: #1C1B18;
+  --text2: #5A5849;
+  --text3: #9A9788;
+  --green: #0F4C35;
+  --green-light: #E8F5EE;
+  --green-border: #A8D5B5;
+  --warn: #7C4D00;
+  --warn-bg: #FFF8EC;
+  --warn-border: #F0C878;
+  --danger: #7C1A1A;
+  --danger-bg: #FFF0F0;
+  --danger-border: #F0A8A8;
+  --info: #1A3A6B;
+  --info-bg: #EEF3FB;
+  --info-border: #A8C0E8;
+  --purple: #3B1F8A;
+  --purple-bg: #F0EEFF;
+  --purple-border: #C4A8F0;
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 13px; }
+
+/* TOPBAR */
+.topbar { height: 44px; display: flex; align-items: center; padding: 0 16px; gap: 10px; }
+.topbar.dokter { background: #1C1B18; }
+.topbar.farmasi { background: var(--green); }
+.tb-logo { font-size: 12px; font-weight: 500; }
+.tb-dokter { color: #C4C1B6; }
+.tb-farmasi { color: #9FD4AE; }
+.tb-sep { width: 0.5px; height: 16px; }
+.tb-dokter .tb-sep { background: #2E2D2A; }
+.tb-farmasi .tb-sep { background: #1A6B4A; }
+.tb-role { font-size: 12px; font-weight: 500; }
+.tb-dokter .tb-role { color: #E0DDCF; }
+.tb-farmasi .tb-role { color: #E8F5EE; }
+.tb-pt { display: flex; align-items: center; gap: 7px; }
+.tb-av { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; }
+.tb-dokter .tb-av { background: #2E3A52; color: #7BC0F7; }
+.tb-farmasi .tb-av { background: #1A6B4A; color: #9FD4AE; }
+.tb-pname { font-size: 12px; font-weight: 500; }
+.tb-dokter .tb-pname { color: #E0DDCF; }
+.tb-farmasi .tb-pname { color: #E8F5EE; }
+.tb-pmeta { font-size: 10px; }
+.tb-dokter .tb-pmeta { color: #5A5A52; }
+.tb-farmasi .tb-pmeta { color: #3A8A6A; }
+.tb-sp { flex: 1; }
+.tb-allergy { display: flex; align-items: center; gap: 5px; background: #3A1F1F; border: 0.5px solid #7A2020; border-radius: 20px; padding: 3px 9px; font-size: 11px; color: #F7C1C1; }
+.tb-btn { font-size: 11.5px; font-weight: 500; padding: 5px 14px; border-radius: 6px; border: none; cursor: pointer; font-family: var(--sans); }
+.tb-ghost { background: transparent; border: 0.5px solid #3A3A36 !important; color: #8A8879; }
+.tb-primary { background: #2563EB; color: #fff; }
+.tb-green { background: #1D9E75; color: #fff; }
+.tb-sign { background: #166534; color: #fff; }
+
+/* TABS (view switcher) */
+.view-tabs { background: var(--surface); border-bottom: 0.5px solid var(--border); padding: 0 16px; display: flex; gap: 2px; }
+.vt { padding: 10px 14px; font-size: 12px; font-weight: 500; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; }
+.vt:hover { color: var(--text2); }
+.vt.active { color: var(--text); border-bottom-color: #2563EB; }
+.vt.active.green { border-bottom-color: var(--green); }
+
+/* LAYOUT */
+.page { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.hidden { display: none; }
+
+/* CARDS */
+.card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+.card-hdr { padding: 9px 14px; background: var(--surface2); border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.card-title { font-size: 12.5px; font-weight: 500; display: flex; align-items: center; gap: 7px; }
+.card-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+
+/* INFO STRIP */
+.info-strip { padding: 8px 14px; background: var(--surface2); border-bottom: 0.5px solid var(--border); display: flex; gap: 20px; }
+.is-item { display: flex; flex-direction: column; gap: 1px; }
+.is-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); font-weight: 500; }
+.is-val { font-size: 12px; font-weight: 500; }
+
+/* FIELDS */
+.fg { display: flex; flex-direction: column; gap: 3px; }
+.fl { font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; color: var(--text2); }
+.fl .req { color: #DC2626; }
+.fr { display: grid; gap: 8px; }
+.fr.c2 { grid-template-columns: 1fr 1fr; }
+.fr.c3 { grid-template-columns: 1fr 1fr 1fr; }
+.fr.c4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+input, select, textarea {
+  font-family: var(--sans); font-size: 12.5px; color: var(--text);
+  background: var(--surface2); border: 0.5px solid var(--border2);
+  border-radius: 6px; padding: 6px 9px; outline: none; width: 100%;
+  transition: border-color .15s;
+}
+input:focus, select:focus, textarea:focus { border-color: #2563EB; background: #fff; }
+textarea { resize: vertical; min-height: 52px; line-height: 1.5; }
+.input-with-unit { display: flex; }
+.input-with-unit input { border-radius: 6px 0 0 6px; border-right: none; }
+.unit-label { background: var(--border); border: 0.5px solid var(--border2); border-left: none; border-radius: 0 6px 6px 0; padding: 0 10px; display: flex; align-items: center; font-size: 11.5px; color: var(--text3); white-space: nowrap; }
+.chip-grp { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { padding: 4px 10px; border-radius: 20px; border: 0.5px solid var(--border2); background: var(--surface2); font-size: 11.5px; font-weight: 500; color: var(--text2); cursor: pointer; transition: all .12s; }
+.chip:hover { background: var(--border); }
+.chip.sel { background: var(--info-bg); border-color: var(--info-border); color: var(--info); }
+
+/* BAHAN TABLE — DOKTER */
+.bahan-table-wrap { overflow-x: auto; }
+.bahan-table { width: 100%; border-collapse: collapse; }
+.bahan-table th { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); font-weight: 500; background: var(--surface2); padding: 7px 10px; border-bottom: 0.5px solid var(--border); text-align: left; white-space: nowrap; }
+.bahan-table td { padding: 0; border-bottom: 0.5px solid #F5F4F0; }
+.bahan-table tr:last-child td { border-bottom: none; }
+.bahan-table tr:hover td { background: #FAFAF7; }
+.bahan-table tr.row-warn td { background: var(--warn-bg); }
+.bahan-table tr.row-danger td { background: var(--danger-bg); }
+.tc { padding: 7px 10px; vertical-align: middle; }
+.cell-input { width: 100%; font-family: var(--sans); font-size: 12px; color: var(--text); background: transparent; border: none; outline: none; padding: 0; }
+.cell-input:focus { background: #fff; box-shadow: inset 0 0 0 2px #2563EB; border-radius: 4px; padding: 4px 6px; }
+.cell-select { width: 100%; font-family: var(--sans); font-size: 12px; background: transparent; border: none; outline: none; padding: 0; cursor: pointer; color: var(--text); }
+.cell-select:focus { background: #fff; box-shadow: inset 0 0 0 2px #2563EB; border-radius: 4px; padding: 4px 6px; }
+.del-btn { width: 28px; height: 32px; background: transparent; border: none; cursor: pointer; color: var(--border2); font-size: 14px; border-radius: 4px; }
+.del-btn:hover { background: var(--danger-bg); color: var(--danger); }
+.add-row { font-size: 12px; font-weight: 500; color: #2563EB; background: transparent; border: none; cursor: pointer; padding: 6px 0; font-family: var(--sans); display: flex; align-items: center; gap: 5px; }
+.add-row:hover { text-decoration: underline; }
+
+/* NOTASI KHUSUS */
+.notasi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 5px; }
+.notasi-chip { background: var(--surface2); border: 0.5px solid var(--border2); border-radius: 6px; padding: 6px 9px; cursor: pointer; transition: all .12s; }
+.notasi-chip:hover { background: var(--border); }
+.notasi-chip.sel { background: var(--purple-bg); border-color: var(--purple-border); }
+.nc-code { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--purple); }
+.notasi-chip.sel .nc-code { color: var(--purple); }
+.nc-desc { font-size: 10.5px; color: var(--text3); margin-top: 1px; }
+
+/* KALKULASI BOX */
+.calc-box { background: var(--purple-bg); border: 0.5px solid var(--purple-border); border-radius: 8px; padding: 10px 12px; }
+.calc-title { font-size: 11px; font-weight: 500; color: var(--purple); margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+.calc-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; }
+.calc-item { background: #fff; border: 0.5px solid var(--purple-border); border-radius: 6px; padding: 7px 9px; }
+.calc-label { font-size: 10px; color: var(--text3); margin-bottom: 2px; }
+.calc-val { font-family: var(--mono); font-size: 14px; font-weight: 500; color: var(--text); }
+.calc-unit { font-size: 10px; color: var(--text3); }
+.calc-formula { font-size: 11px; color: var(--purple); margin-top: 5px; font-family: var(--mono); background: rgba(59,31,138,.06); border-radius: 4px; padding: 4px 8px; }
+
+/* INKOMPATIBILITAS */
+.inkomp-item { display: flex; align-items: flex-start; gap: 7px; padding: 6px 0; border-bottom: 0.5px solid var(--border); }
+.inkomp-item:last-child { border-bottom: none; }
+.inkomp-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.id-danger { background: #EF4444; }
+.id-warn { background: #F59E0B; }
+.id-ok { background: #22C55E; }
+.inkomp-text { font-size: 11.5px; color: var(--text2); line-height: 1.4; flex: 1; }
+.inkomp-text strong { color: var(--text); }
+
+/* VERIFIKASI FARMASI */
+.verif-table { width: 100%; border-collapse: collapse; }
+.verif-table th { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); font-weight: 500; background: var(--surface2); padding: 7px 12px; border-bottom: 0.5px solid var(--border); text-align: left; }
+.verif-table td { padding: 9px 12px; border-bottom: 0.5px solid #F5F4F0; vertical-align: top; }
+.verif-table tr:last-child td { border-bottom: none; }
+.verif-table tr.vr-ok { background: #fff; }
+.verif-table tr.vr-warn { background: var(--warn-bg); }
+.verif-table tr.vr-danger { background: var(--danger-bg); }
+.bahan-name { font-size: 12.5px; font-weight: 500; }
+.bahan-dosis-dok { font-size: 11px; color: var(--text3); margin-top: 1px; font-family: var(--mono); }
+.stok-val { font-size: 12px; font-weight: 500; }
+.stok-ok { color: var(--green); }
+.stok-low { color: var(--warn); }
+.stok-empty { color: var(--danger); }
+.verif-result { display: flex; flex-direction: column; gap: 3px; }
+.vr-produk { font-size: 12px; font-weight: 500; }
+.vr-detail { font-size: 11px; color: var(--text3); }
+.flag-wrap { display: flex; flex-direction: column; gap: 3px; }
+.flag-row { display: flex; align-items: flex-start; gap: 5px; }
+.fd { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.fd-ok { background: #22C55E; }
+.fd-warn { background: #F59E0B; }
+.fd-danger { background: #EF4444; }
+.flag-text { font-size: 11px; color: var(--text2); line-height: 1.35; }
+.verif-input { width: 100%; font-family: var(--mono); font-size: 12px; background: #fff; border: 0.5px solid var(--border2); border-radius: 5px; padding: 4px 7px; outline: none; }
+.verif-input:focus { border-color: var(--green); }
+.act-btn { font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 5px; cursor: pointer; font-family: var(--sans); border: none; transition: all .12s; }
+.ab-ok { background: var(--green); color: #fff; }
+.ab-ok:hover { opacity: .85; }
+.ab-warn { background: var(--warn-bg); color: var(--warn); border: 0.5px solid var(--warn-border) !important; }
+
+/* PROSES RACIKAN */
+.proses-steps { display: flex; flex-direction: column; gap: 0; }
+.proses-step { display: flex; gap: 12px; padding: 9px 0; border-bottom: 0.5px solid var(--border); }
+.proses-step:last-child { border-bottom: none; }
+.ps-num { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+.ps-done { background: var(--green-light); color: var(--green); }
+.ps-active { background: var(--info-bg); color: var(--info); }
+.ps-idle { background: var(--surface2); color: var(--text3); }
+.ps-content { flex: 1; }
+.ps-title { font-size: 12px; font-weight: 500; margin-bottom: 2px; }
+.ps-desc { font-size: 11px; color: var(--text3); line-height: 1.4; }
+.ps-check { width: 16px; height: 16px; border: 1.5px solid var(--border2); border-radius: 3px; cursor: pointer; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+.ps-check.checked { background: var(--green); border-color: var(--green); color: #fff; }
+
+/* LABEL PREVIEW */
+.label-preview { background: #fff; border: 2px solid #1C1B18; border-radius: 8px; padding: 12px 14px; font-family: var(--mono); }
+.lp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #ccc; }
+.lp-rs { font-size: 11px; font-weight: 500; }
+.lp-tgl { font-size: 10px; color: var(--text3); }
+.lp-pasien { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.lp-rx { font-size: 12px; margin-bottom: 2px; color: #1C1B18; }
+.lp-aturan { font-size: 13px; font-weight: 600; margin: 6px 0; color: #1C1B18; }
+.lp-footer { font-size: 10px; color: var(--text3); margin-top: 8px; padding-top: 6px; border-top: 1px dashed #ccc; }
+
+/* BADGE */
+.badge { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 500; }
+.badge-bpjs   { background: var(--warn-bg); color: var(--warn); border: 0.5px solid var(--warn-border); }
+.badge-racik  { background: var(--purple-bg); color: var(--purple); border: 0.5px solid var(--purple-border); }
+.badge-ok     { background: var(--green-light); color: var(--green); border: 0.5px solid var(--green-border); }
+.badge-warn   { background: var(--warn-bg); color: var(--warn); border: 0.5px solid var(--warn-border); }
+
+/* SUMMARY BAR */
+.sum-bar { background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; gap: 14px; }
+.sb-item { display: flex; flex-direction: column; gap: 1px; }
+.sb-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); font-weight: 500; }
+.sb-val { font-family: var(--mono); font-size: 16px; font-weight: 500; }
+.sb-ok { color: var(--green); }
+.sb-warn { color: var(--warn); }
+.sb-sep { width: 0.5px; height: 32px; background: var(--border); }
+.sb-sp { flex: 1; }
+.sb-btn { font-size: 12.5px; font-weight: 500; padding: 8px 18px; border-radius: 7px; border: none; cursor: pointer; font-family: var(--sans); }
+
+/* ALERT BANNER */
+.alert { border-radius: 8px; padding: 8px 11px; display: flex; align-items: flex-start; gap: 8px; font-size: 11.5px; }
+.alert i { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.alert-warn { background: var(--warn-bg); color: var(--warn); border: 0.5px solid var(--warn-border); }
+.alert-danger { background: var(--danger-bg); color: var(--danger); border: 0.5px solid var(--danger-border); }
+.alert-info { background: var(--info-bg); color: var(--info); border: 0.5px solid var(--info-border); }
+</style>
+</head>
+<body>
+
+<!-- VIEW SWITCHER -->
+<div style="display:flex;background:#fff;border-bottom:0.5px solid var(--border);padding:0 16px;gap:2px">
+  <div class="vt active" id="tab-dokter" onclick="switchView('dokter')">👨‍⚕️ Input Dokter</div>
+  <div class="vt" id="tab-farmasi" onclick="switchView('farmasi')">⚗️ Verifikasi Farmasi</div>
+  <div style="flex:1"></div>
+  <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3)">
+    Resep Racikan · Anak Bayu 8th · dr. Hendra · 26 Mei 2026
+  </div>
+</div>
+
+<!-- ════════════════ VIEW DOKTER ════════════════ -->
+<div id="view-dokter">
+<div class="topbar dokter">
+  <span class="tb-logo tb-dokter">Brawijaya Hospital</span>
+  <div class="tb-sep"></div>
+  <span class="tb-role tb-dokter">Dokter · Poli Anak</span>
+  <div class="tb-sep"></div>
+  <div class="tb-pt">
+    <div class="tb-av">AB</div>
+    <div>
+      <div class="tb-pname tb-dokter">Anak Bayu · L 8th · 24kg</div>
+      <div class="tb-pmeta tb-dokter">No. Reg 26052500021 · BPJS · dr. Hendra</div>
+    </div>
+  </div>
+  <div class="tb-sp"></div>
+  <div class="tb-allergy">⚠ Alergi: Sulfa</div>
+  <button class="tb-btn tb-ghost">Simpan Draft</button>
+  <button class="tb-btn tb-sign" onclick="kirimKeFarmasi()">Kirim ke Farmasi →</button>
+</div>
+
+<div class="page">
+
+  <!-- JENIS SEDIAAN -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">🧪 Resep Racikan — Pilih Jenis Sediaan</span>
+      <span class="badge badge-racik">Racikan</span>
+    </div>
+    <div class="card-body">
+      <div class="fg">
+        <label class="fl">Jenis sediaan <span class="req">*</span></label>
+        <div class="chip-grp">
+          <div class="chip sel" onclick="selChip(this,'sediaan')">Puyer / Serbuk</div>
+          <div class="chip" onclick="selChip(this,'sediaan')">Kapsul</div>
+          <div class="chip" onclick="selChip(this,'sediaan')">Sirup / Suspensi</div>
+          <div class="chip" onclick="selChip(this,'sediaan')">Salep / Krim</div>
+          <div class="chip" onclick="selChip(this,'sediaan')">Tetes</div>
+          <div class="chip" onclick="selChip(this,'sediaan')">Suppositoria</div>
+        </div>
+      </div>
+      <div class="fr c3">
+        <div class="fg">
+          <label class="fl">Jumlah bungkus / kapsul <span class="req">*</span></label>
+          <div class="input-with-unit">
+            <input type="number" value="10" id="jml-bungkus" oninput="kalkulasi()">
+            <span class="unit-label">bungkus</span>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Berat badan pasien</label>
+          <div class="input-with-unit">
+            <input type="number" value="24" id="bb-pasien" oninput="kalkulasi()">
+            <span class="unit-label">kg</span>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Dosis per pemberian</label>
+          <div class="input-with-unit">
+            <input type="number" value="1" id="dosis-per-bungkus" oninput="kalkulasi()">
+            <span class="unit-label">bungkus</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BAHAN-BAHAN -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">💊 Komposisi Bahan Racikan</span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span style="font-size:11px;color:var(--text3)">Tab pindah kolom · Enter baris baru</span>
+      </div>
+    </div>
+    <div class="bahan-table-wrap">
+      <table class="bahan-table">
+        <colgroup>
+          <col style="width:32px">
+          <col style="width:220px">
+          <col style="width:130px">
+          <col style="width:90px">
+          <col style="width:120px">
+          <col style="width:160px">
+          <col style="width:32px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Zat aktif / bahan</th>
+            <th>Dosis per bungkus</th>
+            <th>Satuan</th>
+            <th>Notasi khusus</th>
+            <th>Total kebutuhan ⚡</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="bahan-tbody">
+          <tr>
+            <td class="tc" style="text-align:center;color:var(--text3);font-size:11px">1</td>
+            <td class="tc"><input class="cell-input" value="Amoxicillin" oninput="kalkulasi()" placeholder="Nama zat aktif..."></td>
+            <td class="tc"><input class="cell-input" id="b0-dosis" value="125" oninput="kalkulasi()" placeholder="mis. 125"></td>
+            <td class="tc">
+              <select class="cell-select" id="b0-satuan">
+                <option>mg</option><option>g</option><option>mcg</option><option>ml</option><option>tetes</option><option>qs</option><option>aa</option>
+              </select>
+            </td>
+            <td class="tc">
+              <select class="cell-select" id="b0-notasi">
+                <option value="">— normal —</option>
+                <option value="aa">aa (sama rata)</option>
+                <option value="qs">qs (secukupnya)</option>
+                <option value="ad">ad (sampai)</option>
+                <option value="div">div (bagi rata)</option>
+              </select>
+            </td>
+            <td class="tc" style="font-family:var(--mono);font-size:12px;color:var(--green);font-weight:500" id="b0-total">1.250 mg</td>
+            <td class="tc"><button class="del-btn" onclick="this.closest('tr').remove();kalkulasi()">×</button></td>
+          </tr>
+          <tr>
+            <td class="tc" style="text-align:center;color:var(--text3);font-size:11px">2</td>
+            <td class="tc"><input class="cell-input" value="Paracetamol" oninput="kalkulasi()" placeholder="Nama zat aktif..."></td>
+            <td class="tc"><input class="cell-input" id="b1-dosis" value="150" oninput="kalkulasi()"></td>
+            <td class="tc">
+              <select class="cell-select" id="b1-satuan">
+                <option>mg</option><option>g</option><option>mcg</option><option>ml</option><option>tetes</option>
+              </select>
+            </td>
+            <td class="tc">
+              <select class="cell-select" id="b1-notasi">
+                <option value="">— normal —</option>
+                <option value="aa">aa (sama rata)</option>
+                <option value="qs">qs (secukupnya)</option>
+              </select>
+            </td>
+            <td class="tc" style="font-family:var(--mono);font-size:12px;color:var(--green);font-weight:500" id="b1-total">1.500 mg</td>
+            <td class="tc"><button class="del-btn" onclick="this.closest('tr').remove();kalkulasi()">×</button></td>
+          </tr>
+          <tr>
+            <td class="tc" style="text-align:center;color:var(--text3);font-size:11px">3</td>
+            <td class="tc"><input class="cell-input" value="Cetirizine" oninput="kalkulasi()" placeholder="Nama zat aktif..."></td>
+            <td class="tc"><input class="cell-input" id="b2-dosis" value="2.5" oninput="kalkulasi()"></td>
+            <td class="tc">
+              <select class="cell-select" id="b2-satuan">
+                <option>mg</option><option>g</option><option>mcg</option><option>ml</option>
+              </select>
+            </td>
+            <td class="tc">
+              <select class="cell-select" id="b2-notasi">
+                <option value="">— normal —</option>
+                <option value="aa">aa (sama rata)</option>
+                <option value="qs">qs (secukupnya)</option>
+              </select>
+            </td>
+            <td class="tc" style="font-family:var(--mono);font-size:12px;color:var(--green);font-weight:500" id="b2-total">25 mg</td>
+            <td class="tc"><button class="del-btn" onclick="this.closest('tr').remove();kalkulasi()">×</button></td>
+          </tr>
+          <tr class="row-warn">
+            <td class="tc" style="text-align:center;color:var(--text3);font-size:11px">4</td>
+            <td class="tc"><input class="cell-input" value="Lactosa (pengisi)" oninput="kalkulasi()"></td>
+            <td class="tc"><input class="cell-input" id="b3-dosis" placeholder="—" style="color:var(--text3)"></td>
+            <td class="tc">
+              <select class="cell-select" id="b3-satuan">
+                <option>mg</option><option>g</option><option value="qs">qs</option>
+              </select>
+            </td>
+            <td class="tc">
+              <select class="cell-select" id="b3-notasi">
+                <option value="">— normal —</option>
+                <option value="qs" selected>qs (secukupnya)</option>
+              </select>
+            </td>
+            <td class="tc" style="font-family:var(--mono);font-size:12px;color:var(--warn)" id="b3-total">qs (auto)</td>
+            <td class="tc"><button class="del-btn" onclick="this.closest('tr').remove();kalkulasi()">×</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="padding:8px 14px;border-top:0.5px solid var(--border)">
+      <button class="add-row" onclick="addBahan()">+ Tambah bahan</button>
+    </div>
+  </div>
+
+  <!-- NOTASI KHUSUS LEGEND -->
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">📖 Referensi notasi khusus racikan</span></div>
+    <div class="card-body">
+      <div class="notasi-grid">
+        <div class="notasi-chip">
+          <div class="nc-code">aa / ana</div>
+          <div class="nc-desc">Bagian sama rata — semua bahan dibagi jumlah yang sama</div>
+        </div>
+        <div class="notasi-chip">
+          <div class="nc-code">qs / quantum satis</div>
+          <div class="nc-desc">Secukupnya — farmasi tentukan jumlah agar total benar</div>
+        </div>
+        <div class="notasi-chip">
+          <div class="nc-code">ad / usque ad</div>
+          <div class="nc-desc">Sampai mencapai total tertentu — mis. ad 100ml</div>
+        </div>
+        <div class="notasi-chip">
+          <div class="nc-code">div / divide</div>
+          <div class="nc-desc">Bagi rata — total dibagi sejumlah bungkus/kapsul</div>
+        </div>
+        <div class="notasi-chip">
+          <div class="nc-code">dtd / da tales doses</div>
+          <div class="nc-desc">Dosis yang tertulis = per bungkus (bukan total)</div>
+        </div>
+        <div class="notasi-chip">
+          <div class="nc-code">mf / misce fac</div>
+          <div class="nc-desc">Campurkan dan buat — instruksi ke farmasi</div>
+        </div>
+        <div class="notasi-chip">
+          <div class="nc-code">pulv / pulveres</div>
+          <div class="nc-desc">Serbuk / puyer yang dibungkus</div>
+        </div>
+        <div class="notasi-chip">
+          <div class="nc-code">caps / capsule</div>
+          <div class="nc-desc">Dikemas dalam kapsul</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KALKULASI OTOMATIS -->
+  <div class="calc-box">
+    <div class="calc-title">⚡ Kalkulasi otomatis — update saat dosis atau jumlah bungkus diubah</div>
+    <div class="calc-grid">
+      <div class="calc-item">
+        <div class="calc-label">Jumlah bungkus</div>
+        <div class="calc-val" id="kalk-bungkus">10</div>
+        <div class="calc-unit">bungkus</div>
+      </div>
+      <div class="calc-item">
+        <div class="calc-label">Total Amoxicillin</div>
+        <div class="calc-val" id="kalk-amox">1.250</div>
+        <div class="calc-unit">mg total</div>
+      </div>
+      <div class="calc-item">
+        <div class="calc-label">Total Paracetamol</div>
+        <div class="calc-val" id="kalk-para">1.500</div>
+        <div class="calc-unit">mg total</div>
+      </div>
+      <div class="calc-item">
+        <div class="calc-label">Total Cetirizine</div>
+        <div class="calc-val" id="kalk-cet">25</div>
+        <div class="calc-unit">mg total</div>
+      </div>
+    </div>
+    <div class="calc-formula" id="kalk-formula">
+      Formula: dosis per bungkus × jumlah bungkus = total kebutuhan bahan baku
+    </div>
+  </div>
+
+  <!-- ATURAN PAKAI -->
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">📋 Aturan Pakai & Catatan</span></div>
+    <div class="card-body">
+      <div class="fr c3">
+        <div class="fg">
+          <label class="fl">Frekuensi <span class="req">*</span></label>
+          <div class="chip-grp">
+            <div class="chip" onclick="selChip(this,'freq')">3x1</div>
+            <div class="chip sel" onclick="selChip(this,'freq')">3x1 bungkus</div>
+            <div class="chip" onclick="selChip(this,'freq')">2x1</div>
+            <div class="chip" onclick="selChip(this,'freq')">prn</div>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Waktu minum</label>
+          <div class="chip-grp">
+            <div class="chip sel" onclick="selChip(this,'waktu')">Setelah makan</div>
+            <div class="chip" onclick="selChip(this,'waktu')">Sebelum makan</div>
+            <div class="chip" onclick="selChip(this,'waktu')">Bebas</div>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Cara penyajian</label>
+          <div class="chip-grp">
+            <div class="chip sel" onclick="selChip(this,'cara')">Langsung diminum</div>
+            <div class="chip" onclick="selChip(this,'cara')">Larutkan dalam air</div>
+            <div class="chip" onclick="selChip(this,'cara')">Campur susu</div>
+          </div>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Catatan khusus untuk farmasi</label>
+        <textarea placeholder="Instruksi racikan tambahan — pewarna, bahan pengisi, dll...">Haluskan hingga homogen. Bungkus dalam kertas puyer. Berikan dalam plastik klip berlabel.</textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="sum-bar">
+    <div class="sb-item"><div class="sb-label">Bahan</div><div class="sb-val sb-ok">4</div></div>
+    <div class="sb-sep"></div>
+    <div class="sb-item"><div class="sb-label">Bungkus</div><div class="sb-val sb-ok">10</div></div>
+    <div class="sb-sep"></div>
+    <div class="sb-item"><div class="sb-label">Kalkulasi</div><div class="sb-val sb-ok">✓ OK</div></div>
+    <div class="sb-sp"></div>
+    <button class="sb-btn" style="background:transparent;border:0.5px solid var(--border2);color:var(--text2)">Simpan Draft</button>
+    <button class="sb-btn" style="background:#166534;color:#fff" onclick="kirimKeFarmasi()">Kirim ke Farmasi →</button>
+  </div>
+
+</div>
+</div>
+
+<!-- ════════════════ VIEW FARMASI ════════════════ -->
+<div id="view-farmasi" class="hidden">
+<div class="topbar farmasi">
+  <span class="tb-logo tb-farmasi">Brawijaya Hospital</span>
+  <div class="tb-sep"></div>
+  <span class="tb-role tb-farmasi">Instalasi Farmasi · Racikan</span>
+  <div class="tb-sp"></div>
+  <div class="tb-pt">
+    <div class="tb-av">AB</div>
+    <div>
+      <div class="tb-pname tb-farmasi">Anak Bayu · L 8th · 24kg</div>
+      <div class="tb-pmeta tb-farmasi">Resep Racikan · dr. Hendra · 26 Mei 2026 · 10:55</div>
+    </div>
+  </div>
+  <div class="tb-sp"></div>
+  <div class="tb-allergy">⚠ Alergi: Sulfa</div>
+</div>
+
+<div class="page">
+
+  <!-- ALERT -->
+  <div class="alert alert-warn">
+    <span style="font-size:16px">⚠</span>
+    <div><strong>1 catatan inkompatibilitas perlu dikonfirmasi</strong> — Amoxicillin + Lactosa dalam kondisi lembab dapat mengurangi stabilitas. Perhatikan kondisi penyimpanan bahan baku sebelum meracik.</div>
+  </div>
+
+  <!-- VERIFIKASI BAHAN -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">🔍 Verifikasi Bahan & Stok</span>
+      <div style="display:flex;gap:6px">
+        <span class="badge badge-racik">Puyer · 10 bungkus</span>
+        <span class="badge badge-bpjs">BPJS</span>
+      </div>
+    </div>
+    <table class="verif-table">
+      <thead>
+        <tr>
+          <th style="width:36px">#</th>
+          <th style="width:200px">Bahan (dari dokter)</th>
+          <th style="width:160px">Bahan baku di stok</th>
+          <th style="width:100px">Kebutuhan</th>
+          <th style="width:100px">Stok tersedia</th>
+          <th style="width:160px">Flag & catatan</th>
+          <th>Timbang (aktual)</th>
+          <th style="width:80px">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="vr-ok">
+          <td><div style="width:22px;height:22px;border-radius:50%;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">1</div></td>
+          <td>
+            <div class="bahan-name">Amoxicillin</div>
+            <div class="bahan-dosis-dok">125mg/bungkus × 10 = 1.250mg</div>
+          </td>
+          <td>
+            <div class="verif-result">
+              <div class="vr-produk">Amoxicillin powder 500mg/kap</div>
+              <div class="vr-detail">Kalbe Farma · Batch #KF2024091</div>
+            </div>
+          </td>
+          <td style="font-family:var(--mono);font-size:13px;font-weight:500;color:var(--green)">1.250 mg</td>
+          <td><span class="stok-val stok-ok">✓ 5.000 mg</span></td>
+          <td>
+            <div class="flag-wrap">
+              <div class="flag-row"><div class="fd fd-ok"></div><span class="flag-text">Stok cukup, exp Des 2026</span></div>
+            </div>
+          </td>
+          <td><input class="verif-input" value="1.250" style="width:80px"> mg</td>
+          <td><button class="act-btn ab-ok" onclick="approveRow(this)">✓ OK</button></td>
+        </tr>
+        <tr class="vr-ok">
+          <td><div style="width:22px;height:22px;border-radius:50%;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">2</div></td>
+          <td>
+            <div class="bahan-name">Paracetamol</div>
+            <div class="bahan-dosis-dok">150mg/bungkus × 10 = 1.500mg</div>
+          </td>
+          <td>
+            <div class="verif-result">
+              <div class="vr-produk">Paracetamol powder</div>
+              <div class="vr-detail">Generik · Batch #GN2024112</div>
+            </div>
+          </td>
+          <td style="font-family:var(--mono);font-size:13px;font-weight:500;color:var(--green)">1.500 mg</td>
+          <td><span class="stok-val stok-ok">✓ 10.000 mg</span></td>
+          <td>
+            <div class="flag-wrap">
+              <div class="flag-row"><div class="fd fd-ok"></div><span class="flag-text">Aman, stok melimpah</span></div>
+            </div>
+          </td>
+          <td><input class="verif-input" value="1.500" style="width:80px"> mg</td>
+          <td><button class="act-btn ab-ok" onclick="approveRow(this)">✓ OK</button></td>
+        </tr>
+        <tr class="vr-ok">
+          <td><div style="width:22px;height:22px;border-radius:50%;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">3</div></td>
+          <td>
+            <div class="bahan-name">Cetirizine</div>
+            <div class="bahan-dosis-dok">2.5mg/bungkus × 10 = 25mg</div>
+          </td>
+          <td>
+            <div class="verif-result">
+              <div class="vr-produk">Cetirizine tablet 10mg</div>
+              <div class="vr-detail">Digerus · Generik BPJS</div>
+            </div>
+          </td>
+          <td style="font-family:var(--mono);font-size:13px;font-weight:500;color:var(--green)">25 mg</td>
+          <td><span class="stok-val stok-ok">✓ 300 mg</span></td>
+          <td>
+            <div class="flag-wrap">
+              <div class="flag-row"><div class="fd fd-ok"></div><span class="flag-text">Digerus dari 2.5 tab 10mg</span></div>
+            </div>
+          </td>
+          <td><input class="verif-input" value="25" style="width:80px"> mg</td>
+          <td><button class="act-btn ab-ok" onclick="approveRow(this)">✓ OK</button></td>
+        </tr>
+        <tr class="vr-warn">
+          <td><div style="width:22px;height:22px;border-radius:50%;background:var(--warn-bg);color:var(--warn);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">4</div></td>
+          <td>
+            <div class="bahan-name">Lactosa (pengisi)</div>
+            <div class="bahan-dosis-dok">qs — secukupnya</div>
+          </td>
+          <td>
+            <div class="verif-result">
+              <div class="vr-produk">Lactosa powder USP</div>
+              <div class="vr-detail">Generik · Bahan pengisi</div>
+            </div>
+          </td>
+          <td style="font-family:var(--mono);font-size:13px;font-weight:500;color:var(--warn)">qs</td>
+          <td><span class="stok-val stok-ok">✓ 50.000 mg</span></td>
+          <td>
+            <div class="flag-wrap">
+              <div class="flag-row"><div class="fd fd-warn"></div><span class="flag-text"><strong>Inkompatibilitas potensi</strong> — Amox + Lactosa lembab, pastikan bahan kering</span></div>
+            </div>
+          </td>
+          <td><input class="verif-input" placeholder="hitung" style="width:80px"> mg</td>
+          <td><button class="act-btn ab-warn" onclick="approveRow(this)">Catat</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- INKOMPATIBILITAS -->
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">⚗️ Cek Inkompatibilitas Bahan</span></div>
+    <div class="card-body">
+      <div class="inkomp-item">
+        <div class="inkomp-dot id-warn"></div>
+        <div class="inkomp-text"><strong>Amoxicillin + Lactosa</strong> — inkompatibilitas fisik pada kondisi lembab. Reaksi Maillard dapat menurunkan potensi Amoxicillin. <span style="color:var(--warn);font-weight:500">Pastikan kedua bahan kering sempurna sebelum dicampur.</span></div>
+      </div>
+      <div class="inkomp-item">
+        <div class="inkomp-dot id-ok"></div>
+        <div class="inkomp-text"><strong>Amoxicillin + Paracetamol</strong> — tidak ada inkompatibilitas bermakna. Aman dicampur dalam sediaan puyer.</div>
+      </div>
+      <div class="inkomp-item">
+        <div class="inkomp-dot id-ok"></div>
+        <div class="inkomp-text"><strong>Paracetamol + Cetirizine</strong> — aman. Kombinasi umum untuk demam + alergi pada pediatri.</div>
+      </div>
+      <div class="inkomp-item">
+        <div class="inkomp-dot id-ok"></div>
+        <div class="inkomp-text"><strong>Alergi pasien (Sulfa)</strong> — tidak ada bahan yang mengandung sulfonamida. Aman untuk pasien ini.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROSES RACIKAN -->
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">📋 Checklist Proses Racikan</span></div>
+    <div class="card-body">
+      <div class="proses-steps">
+        <div class="proses-step">
+          <div class="ps-num ps-done">✓</div>
+          <div class="ps-content">
+            <div class="ps-title">Verifikasi resep & kalkulasi dosis</div>
+            <div class="ps-desc">Semua dosis terverifikasi: Amox 1.250mg, PCT 1.500mg, Cetirizine 25mg total</div>
+          </div>
+          <div class="ps-check checked">✓</div>
+        </div>
+        <div class="proses-step">
+          <div class="ps-num ps-active">2</div>
+          <div class="ps-content">
+            <div class="ps-title">Timbang bahan baku</div>
+            <div class="ps-desc">Timbang masing-masing bahan sesuai total kebutuhan. Catat berat aktual di kolom verifikasi.</div>
+          </div>
+          <div class="ps-check" onclick="this.classList.toggle('checked');this.textContent=this.classList.contains('checked')?'✓':''"></div>
+        </div>
+        <div class="proses-step">
+          <div class="ps-num ps-idle">3</div>
+          <div class="ps-content">
+            <div class="ps-title">Gerus & campur (geometric dilution)</div>
+            <div class="ps-desc">Gerus bahan terkecil dulu (Cetirizine), tambahkan bahan lain bertahap. Campur homogen.</div>
+          </div>
+          <div class="ps-check" onclick="this.classList.toggle('checked');this.textContent=this.classList.contains('checked')?'✓':''"></div>
+        </div>
+        <div class="proses-step">
+          <div class="ps-num ps-idle">4</div>
+          <div class="ps-content">
+            <div class="ps-title">Tambah Lactosa qs & homogenkan</div>
+            <div class="ps-desc">Tambah Lactosa secukupnya untuk mencapai keseragaman berat tiap bungkus.</div>
+          </div>
+          <div class="ps-check" onclick="this.classList.toggle('checked');this.textContent=this.classList.contains('checked')?'✓':''"></div>
+        </div>
+        <div class="proses-step">
+          <div class="ps-num ps-idle">5</div>
+          <div class="ps-content">
+            <div class="ps-title">Bagi ke 10 bungkus — timbang keseragaman</div>
+            <div class="ps-desc">Bagi rata ke 10 bungkus. Cek keseragaman berat: toleransi ±5% dari berat rata-rata.</div>
+          </div>
+          <div class="ps-check" onclick="this.classList.toggle('checked');this.textContent=this.classList.contains('checked')?'✓':''"></div>
+        </div>
+        <div class="proses-step">
+          <div class="ps-num ps-idle">6</div>
+          <div class="ps-content">
+            <div class="ps-title">Cetak label & kemas</div>
+            <div class="ps-desc">Label otomatis tersedia setelah verifikasi selesai. Kemas dalam plastik klip.</div>
+          </div>
+          <div class="ps-check" onclick="this.classList.toggle('checked');this.textContent=this.classList.contains('checked')?'✓':''"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LABEL PREVIEW -->
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">🏷️ Preview Label Otomatis</span>
+      <button class="act-btn" style="background:#1C1B18;color:#fff;font-size:11px" onclick="alert('Label dicetak!')">🖨️ Cetak Label</button>
+    </div>
+    <div class="card-body">
+      <div class="label-preview">
+        <div class="lp-header">
+          <div>
+            <div class="lp-rs">RS Brawijaya Hospital</div>
+            <div style="font-size:10px;color:var(--text3)">Instalasi Farmasi</div>
+          </div>
+          <div class="lp-tgl">26 Mei 2026<br>No: RX/RAC/2026/0021</div>
+        </div>
+        <div class="lp-pasien">Anak Bayu (L, 8th)</div>
+        <div class="lp-rx">R/ Puyer — 10 bungkus</div>
+        <div class="lp-rx">Amoxicillin 125mg + Paracetamol 150mg</div>
+        <div class="lp-rx">+ Cetirizine 2.5mg / bungkus</div>
+        <div class="lp-aturan">3 × 1 bungkus setelah makan</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Larutkan dalam sedikit air sebelum diminum</div>
+        <div class="lp-footer">
+          dr. Hendra · Poli Anak · BPJS<br>
+          Apoteker: _____________ Tgl: 26/05/2026
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sum-bar">
+    <div class="sb-item"><div class="sb-label">Bahan OK</div><div class="sb-val sb-ok">3/4</div></div>
+    <div class="sb-sep"></div>
+    <div class="sb-item"><div class="sb-label">Peringatan</div><div class="sb-val sb-warn">1</div></div>
+    <div class="sb-sep"></div>
+    <div class="sb-item"><div class="sb-label">Inkomp</div><div class="sb-val sb-warn">1 minor</div></div>
+    <div class="sb-sp"></div>
+    <button class="sb-btn" style="background:transparent;border:0.5px solid var(--border2);color:var(--text2)" onclick="switchView('dokter')">← Kembali ke Resep</button>
+    <button class="sb-btn" style="background:#166534;color:#fff" onclick="selesai()">✓ Verifikasi Selesai — Siap Racik</button>
+  </div>
+
+</div>
+</div>
+
+<script>
+function switchView(v) {
+  document.getElementById('view-dokter').classList.toggle('hidden', v!=='dokter');
+  document.getElementById('view-farmasi').classList.toggle('hidden', v!=='farmasi');
+  document.getElementById('tab-dokter').classList.toggle('active', v==='dokter');
+  document.getElementById('tab-farmasi').classList.toggle('active', v==='farmasi');
+}
+function selChip(el, group) {
+  el.closest('.chip-grp').querySelectorAll('.chip').forEach(function(c){ c.classList.remove('sel'); });
+  el.classList.add('sel');
+}
+function kalkulasi() {
+  var jml = parseInt(document.getElementById('jml-bungkus').value)||10;
+  document.getElementById('kalk-bungkus').textContent = jml;
+  var d0 = parseFloat(document.getElementById('b0-dosis').value)||0;
+  var d1 = parseFloat(document.getElementById('b1-dosis').value)||0;
+  var d2 = parseFloat(document.getElementById('b2-dosis').value)||0;
+  document.getElementById('b0-total').textContent = (d0*jml).toLocaleString('id') + ' mg';
+  document.getElementById('b1-total').textContent = (d1*jml).toLocaleString('id') + ' mg';
+  document.getElementById('b2-total').textContent = (d2*jml).toLocaleString('id') + ' mg';
+  document.getElementById('kalk-amox').textContent = (d0*jml).toLocaleString('id');
+  document.getElementById('kalk-para').textContent = (d1*jml).toLocaleString('id');
+  document.getElementById('kalk-cet').textContent  = (d2*jml).toLocaleString('id');
+  document.getElementById('kalk-formula').textContent =
+    'Formula: ' + d0 + 'mg × ' + jml + ' = ' + (d0*jml) + 'mg Amox | ' +
+    d1 + 'mg × ' + jml + ' = ' + (d1*jml) + 'mg PCT | ' +
+    d2 + 'mg × ' + jml + ' = ' + (d2*jml) + 'mg Cetirizine';
+}
+function addBahan() {
+  var tbody = document.getElementById('bahan-tbody');
+  var n = tbody.children.length + 1;
+  var tr = document.createElement('tr');
+  tr.innerHTML = '<td class="tc" style="text-align:center;color:var(--text3);font-size:11px">'+n+'</td>' +
+    '<td class="tc"><input class="cell-input" placeholder="Nama zat aktif..."></td>' +
+    '<td class="tc"><input class="cell-input" placeholder="0" oninput="kalkulasi()"></td>' +
+    '<td class="tc"><select class="cell-select"><option>mg</option><option>g</option><option>mcg</option><option>ml</option><option>qs</option></select></td>' +
+    '<td class="tc"><select class="cell-select"><option value="">— normal —</option><option>aa</option><option>qs</option><option>ad</option></select></td>' +
+    '<td class="tc" style="font-family:var(--mono);font-size:12px;color:var(--text3)">—</td>' +
+    '<td class="tc"><button class="del-btn" onclick="this.closest(\'tr\').remove();kalkulasi()">×</button></td>';
+  tbody.appendChild(tr);
+  tr.querySelector('.cell-input').focus();
+}
+function approveRow(btn) {
+  var row = btn.closest('tr');
+  row.style.opacity = '.55';
+  btn.disabled = true;
+  btn.textContent = '✓ Done';
+  btn.style.background = '#166534';
+  btn.style.color = '#fff';
+}
+function kirimKeFarmasi() {
+  switchView('farmasi');
+}
+function selesai() {
+  alert('Verifikasi selesai!\n\nResep racikan disetujui untuk diracik.\n\n• Checklist proses tersimpan\n• Stok bahan baku terpotong otomatis\n• Label siap cetak\n• Pasien masuk antrian pengambilan obat');
+}
+</script>
+</body>
+</html>

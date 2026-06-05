@@ -177,6 +177,14 @@ function SearchableSelect({
 export default function PendaftaranDashboard() {
   const [rawAntreanList, setRawAntreanList] = useState<any[]>([]);
   const [activeAntrean, setActiveAntrean] = useState<any>(null);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message });
+    setTimeout(() => {
+      setToast(null);
+    }, 4500);
+  };
 
   // State Filter Antrean Loket Kiosk (Panel Kiri)
   const [filterTanggal, setFilterTanggal] = useState<string>(formatLocalDate());
@@ -683,34 +691,34 @@ export default function PendaftaranDashboard() {
 
     // 🛡️ VALIDASI FORM CARA BAYAR & PENJAMIN
     if (!idCaraBayar) {
-      alert('⚠️ Silakan pilih Cara Bayar terlebih dahulu!');
+      showToast('error', '⚠️ Silakan pilih Cara Bayar terlebih dahulu!');
       return;
     }
     const selectedCaraBayarObj = masterCaraBayar.find(cb => cb.id_cara_bayar === idCaraBayar);
     if (selectedCaraBayarObj && selectedCaraBayarObj.nama_cara_bayar !== 'Umum Pribadi' && !idPenjamin) {
-      alert(`⚠️ Cara bayar ${selectedCaraBayarObj.nama_cara_bayar} wajib memilih Penjamin!`);
+      showToast('error', `⚠️ Cara bayar ${selectedCaraBayarObj.nama_cara_bayar} wajib memilih Penjamin!`);
       return;
     }
 
     // 🛡️ VALIDASI FORM ASAL RUJUKAN & DETAIL RUJUKAN
     if (!idAsalRujukan) {
-      alert('⚠️ Silakan pilih Asal Rujukan terlebih dahulu!');
+      showToast('error', '⚠️ Silakan pilih Asal Rujukan terlebih dahulu!');
       return;
     }
     const selectedAsalRujukanObj = masterAsalRujukan.find(ar => ar.id_asal_rujukan === idAsalRujukan);
     if (selectedAsalRujukanObj && selectedAsalRujukanObj.nama_asal_rujukan !== 'Datang Sendiri' && !detailAsalRujukan.trim()) {
-      alert(`⚠️ Detail asal rujukan wajib diisi secara manual jika rujukan melalui ${selectedAsalRujukanObj.nama_asal_rujukan}!`);
+      showToast('error', `⚠️ Detail asal rujukan wajib diisi secara manual jika rujukan melalui ${selectedAsalRujukanObj.nama_asal_rujukan}!`);
       return;
     }
 
     // 🛡️ VALIDASI FORM DOKTER & SISA KUOTA
     if (!idDokter) {
-      alert('⚠️ Silakan pilih Dokter Praktik terlebih dahulu!');
+      showToast('error', '⚠️ Silakan pilih Dokter Praktik terlebih dahulu!');
       return;
     }
     const selectedDoctorObj = filteredDokter.find((d) => d.id_dokter === idDokter);
     if (selectedDoctorObj && selectedDoctorObj.sisaKuota !== undefined && selectedDoctorObj.sisaKuota <= 0) {
-      alert(`⚠️ Kuota pelayanan untuk ${selectedDoctorObj.nama_dokter} hari ini sudah penuh! Silakan pilih dokter lain yang masih memiliki sisa kuota.`);
+      showToast('error', `⚠️ Kuota pelayanan untuk ${selectedDoctorObj.nama_dokter} hari ini sudah penuh! Silakan pilih dokter lain yang masih memiliki sisa kuota.`);
       return;
     }
 
@@ -780,12 +788,12 @@ export default function PendaftaranDashboard() {
         });
       }
 
-      alert(`✅ Registrasi Sukses!\nPasien dialirkan ke Nurse Station.`);
+      showToast('success', '✅ Registrasi Sukses! Pasien dialirkan ke Nurse Station.');
       handleResetModePasienBaru();
       setActiveAntrean(null);
       fetchData();
     } catch (error: any) {
-      alert(`Error: ${error.message}`);
+      showToast('error', `Error: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -815,11 +823,11 @@ export default function PendaftaranDashboard() {
         if (!resKunjungan.ok) throw new Error('Gagal membatalkan kunjungan.');
       }
 
-      alert('✅ Pemeriksaan pasien berhasil dibatalkan.');
+      showToast('success', '✅ Pemeriksaan pasien berhasil dibatalkan.');
       fetchData();
     } catch (error: any) {
       console.error(error);
-      alert(`Gagal membatalkan pemeriksaan: ${error.message}`);
+      showToast('error', `Gagal membatalkan pemeriksaan: ${error.message}`);
     }
   };
 
@@ -883,7 +891,7 @@ export default function PendaftaranDashboard() {
       kelurahan: pasien.kelurahan?.nama_kelurahan || "",
     });
 
-    alert(`📋 Data pasien ${pasien.nama_lengkap} dan ruangan tujuannya berhasil dimuat ke formulir! Petugas loket tinggal menyesuaikan atau langsung klik Simpan.`);
+    showToast('success', `📋 Data pasien ${pasien.nama_lengkap} dan ruangan tujuannya berhasil dimuat ke formulir!`);
   };
 
   const handleRtRwChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1859,6 +1867,38 @@ export default function PendaftaranDashboard() {
           </div>
         </div>
       )}
+
+      {/* PREMIUM FLOATING TOAST NOTIFICATION */}
+      {toast && (
+        <div
+          className={`fixed top-5 right-5 z-50 flex items-center gap-3.5 px-4.5 py-3.5 rounded-2xl shadow-2xl transition-all duration-300 transform border text-xs font-bold font-sans animate-fade-in ${
+            toast.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-250 shadow-emerald-500/10'
+              : 'bg-rose-50 text-rose-800 border-rose-250 shadow-rose-500/10'
+          }`}
+          style={{ minWidth: '320px', maxWidth: '420px', zIndex: 9999 }}
+        >
+          <span className="text-lg leading-none select-none">
+            {toast.type === 'success' ? '✅' : '⚠️'}
+          </span>
+          <div className="flex-1 space-y-0.5 text-left">
+            <span className="block font-black text-slate-800">
+              {toast.type === 'success' ? 'Berhasil' : 'Peringatan Medis'}
+            </span>
+            <span className="block text-[10.5px] font-semibold text-slate-650 leading-relaxed">
+              {toast.message}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="text-slate-400 hover:text-slate-700 cursor-pointer font-bold text-xs select-none pl-1 transition-colors bg-transparent border-none outline-none"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
     </MasterLayout>
   );
 }

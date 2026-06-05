@@ -32,6 +32,13 @@ model asesmen_keperawatan {
   respiratory_rate Int?
   alergi_makanan   String?
   alergi_obat      String?
+  skala_nyeri      Int?
+  skala_risiko_jatuh Int?
+  tingkat_risiko_jatuh String?
+  obat_dikonsumsi  String?
+  riwayat_penyakit String?
+  spo2             Int?
+  gds              Int?
   waktu_periksa    DateTime?  @default(now()) @db.Timestamp(6)
   kunjungan        kunjungan? @relation(fields: [id_kunjungan], references: [id_kunjungan], onDelete: Cascade, onUpdate: NoAction)
 }
@@ -71,6 +78,7 @@ model kunjungan {
   pemeriksaan_dokter    pemeriksaan_dokter[]
   resep                 resep[]
   tagihan               tagihan[]
+  hasil_laboratorium    hasil_laboratorium[]
 
   cara_bayar            master_cara_bayar?    @relation(fields: [id_cara_bayar], references: [id_cara_bayar], onDelete: NoAction, onUpdate: NoAction)
   penjamin              master_penjamin?      @relation(fields: [id_penjamin], references: [id_penjamin], onDelete: NoAction, onUpdate: NoAction)
@@ -130,14 +138,17 @@ model resep {
 }
 
 model resep_item {
-  id_resep_item    String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  id_resep         String? @db.Uuid
-  id_obat          String? @db.VarChar(50)
+  id_resep_item    String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_resep         String?             @db.Uuid
+  id_obat          String?             @db.Uuid
+  nama_obat        String?             @db.VarChar(255)
   jumlah           Int
-  aturan_pakai     String? @db.VarChar(100)
-  catatan_tambahan String? @db.VarChar(255)
-  resep            resep?  @relation(fields: [id_resep], references: [id_resep], onDelete: Cascade, onUpdate: NoAction)
+  aturan_pakai     String?             @db.VarChar(100)
+  catatan_tambahan String?             @db.VarChar(255)
+  resep            resep?              @relation(fields: [id_resep], references: [id_resep], onDelete: Cascade, onUpdate: NoAction)
+  master_obat      master_obat_produk? @relation(fields: [id_obat], references: [id], onDelete: SetNull, onUpdate: NoAction)
 }
+
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model tagihan {
@@ -401,4 +412,145 @@ model tagihan_detail_komponen {
 
   tagihan_detail             tagihan_detail @relation(fields: [id_tagihan_detail], references: [id_tagihan_detail], onDelete: Cascade, onUpdate: NoAction)
   master_komponen_tarif      master_komponen_tarif? @relation(fields: [id_komponen], references: [id_komponen], onDelete: SetNull, onUpdate: NoAction)
+}
+
+model hasil_laboratorium {
+  id_hasil_lab        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_kunjungan        String    @db.Uuid
+  nama_rs             String    @db.VarChar(150)
+  nama_pasien         String    @db.VarChar(150)
+  tanggal_lab         DateTime  @db.Timestamp(6)
+  no_registrasi       String?   @db.VarChar(50)
+  no_order            String?   @db.VarChar(50)
+  daftar_pemeriksaan  Json
+  catatan_analisis_ai String?   @db.Text
+  ringkasan_analisis_ai String? @db.Text
+  saran_analisis_ai     String? @db.Text
+  created_at          DateTime? @default(now()) @db.Timestamp(6)
+
+  kunjungan           kunjungan @relation(fields: [id_kunjungan], references: [id_kunjungan], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model master_obat_zat_aktif {
+  id                        String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_generik              String             @db.VarChar(150)
+  nama_alias                String[] // PostgreSQL scalar list
+  kode_atc                  String             @db.VarChar(50)
+  kelas_terapi              String             @db.VarChar(100)
+  subkelas_terapi           String?            @db.VarChar(100)
+  golongan_obat             String             @db.VarChar(50)
+  dosis_lazim_dewasa        String?            @db.VarChar(255)
+  dosis_lazim_anak          String?            @db.VarChar(255)
+  dosis_max_harian          Decimal?           @db.Decimal(10, 2)
+  perlu_penyesuaian_ginjal  Boolean            @default(false)
+  perlu_penyesuaian_hepar   Boolean            @default(false)
+  kontraindikasi_kehamilan  String?            @db.VarChar(10)
+  frekuensi_default         String?            @db.VarChar(50)
+  waktu_minum_default       String?            @db.VarChar(50)
+  is_formularium_nas        Boolean            @default(false)
+  is_aktif                  Boolean            @default(true)
+  created_at                DateTime           @default(now()) @db.Timestamp(6)
+  updated_at                DateTime           @default(now()) @updatedAt @db.Timestamp(6)
+
+  master_obat_produk        master_obat_produk[]
+  interaksi_a               obat_interaksi[]   @relation("zat_aktif_a")
+  interaksi_b               obat_interaksi[]   @relation("zat_aktif_b")
+}
+
+model master_obat_produk {
+  id                  String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  zat_aktif_id        String             @db.Uuid
+  nama_dagang         String             @db.VarChar(150)
+  nama_produk_lengkap String             @db.VarChar(255)
+  kekuatan_dosis      String             @db.VarChar(100)
+  bentuk_sediaan      String             @db.VarChar(100)
+  rute_pemberian      String             @db.VarChar(100)
+  satuan_terkecil     String             @db.VarChar(50)
+  isi_per_kemasan     Int
+  produsen            String             @db.VarChar(150)
+  no_registrasi_bpom  String             @db.VarChar(100)
+  tipe_produk         String             @db.VarChar(100)
+  is_bpjs             Boolean            @default(false)
+  is_formularium_rs   Boolean            @default(false)
+  prioritas_substitusi Int                @default(1)
+  is_aktif            Boolean            @default(true)
+  created_at          DateTime           @default(now()) @db.Timestamp(6)
+  updated_at          DateTime           @default(now()) @updatedAt @db.Timestamp(6)
+
+  zat_aktif           master_obat_zat_aktif @relation(fields: [zat_aktif_id], references: [id], onDelete: Cascade)
+  resep_item          resep_item[]
+  obat_stok           obat_stok[]
+  obat_harga          obat_harga[]
+}
+
+model master_gudang {
+  id_gudang   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_gudang String      @db.VarChar(100) @unique
+  is_aktif    Boolean     @default(true)
+  created_at  DateTime    @default(now()) @db.Timestamp(6)
+  updated_at  DateTime    @default(now()) @updatedAt @db.Timestamp(6)
+  obat_stok   obat_stok[]
+}
+
+model obat_stok {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  produk_id     String             @db.Uuid
+  gudang_id     String             @db.Uuid
+  stok_tersedia Int
+  stok_minimum  Int
+  no_batch      String             @db.VarChar(100)
+  expired_date  DateTime           @db.Date
+  lokasi_rak    String?            @db.VarChar(100)
+  updated_at    DateTime           @default(now()) @updatedAt @db.Timestamp(6)
+
+  produk        master_obat_produk @relation(fields: [produk_id], references: [id], onDelete: Cascade)
+  gudang        master_gudang      @relation(fields: [gudang_id], references: [id_gudang], onDelete: Cascade)
+}
+
+model obat_harga {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  produk_id     String             @db.Uuid
+  jenis_jaminan String             @db.VarChar(50)
+  harga_satuan  Decimal            @default(0) @db.Decimal(15, 2)
+  harga_kemasan Decimal            @default(0) @db.Decimal(15, 2)
+  is_e_katalog  Boolean            @default(false)
+  berlaku_dari  DateTime           @db.Date
+  berlaku_sampai DateTime?          @db.Date
+  created_at    DateTime           @default(now()) @db.Timestamp(6)
+  updated_at    DateTime           @default(now()) @updatedAt @db.Timestamp(6)
+
+  produk        master_obat_produk @relation(fields: [produk_id], references: [id], onDelete: Cascade)
+}
+
+model obat_interaksi {
+  id                 String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  zat_aktif_a_id     String                @db.Uuid
+  zat_aktif_b_id     String                @db.Uuid
+  tingkat_keparahan  String                @db.VarChar(50)
+  mekanisme          String?               @db.Text
+  efek_klinis        String                @db.Text
+  rekomendasi        String                @db.Text
+  sumber_referensi   String?               @db.VarChar(255)
+  is_alergi_silang   Boolean               @default(false)
+  berlaku_untuk_kelas Boolean              @default(false)
+  created_at         DateTime              @default(now()) @db.Timestamp(6)
+  updated_at         DateTime              @default(now()) @updatedAt @db.Timestamp(6)
+
+  zat_aktif_a        master_obat_zat_aktif @relation("zat_aktif_a", fields: [zat_aktif_a_id], references: [id], onDelete: Cascade)
+  zat_aktif_b        master_obat_zat_aktif @relation("zat_aktif_b", fields: [zat_aktif_b_id], references: [id], onDelete: Cascade)
+}
+
+model master_aturan_pakai {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kategori            String    @db.VarChar(50) // "latin", "indo", "pola", "bebas", "khusus"
+  input_dokter        String[] // Array of variants e.g. ["od", "omni die"]
+  format_standar      String    @db.VarChar(100) // standard normalized format e.g. "1x1"
+  frekuensi_hari      Decimal?  @db.Decimal(5, 2) // e.g. 1.00, 2.00, 3.00, 0.50, 0.14
+  dosis_per_minum     String?   @db.VarChar(100) // e.g. "1 tab", "½ tab"
+  waktu_minum         String[] // e.g. ["pagi", "malam"]
+  catatan_implementasi String?  @db.Text
+  is_penting          Boolean   @default(false)
+  is_aktif            Boolean   @default(true)
+  created_at          DateTime  @default(now()) @db.Timestamp(6)
+  updated_at          DateTime  @default(now()) @updatedAt @db.Timestamp(6)
 }

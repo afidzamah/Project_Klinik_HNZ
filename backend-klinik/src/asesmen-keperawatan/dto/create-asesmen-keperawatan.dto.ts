@@ -33,4 +33,25 @@ export class CreateAsesmenKeperawatanDto {
 
   @ApiProperty({ example: 'Penicillin', description: 'Alergi obat', required: false })
   alergi_obat?: string;
+
+  @ApiProperty({ example: 4, description: 'Skala nyeri Wong-Baker (0-10)', required: false })
+  skala_nyeri?: number;
+
+  @ApiProperty({ example: 25, description: 'Skala risiko jatuh Morse', required: false })
+  skala_risiko_jatuh?: number;
+
+  @ApiProperty({ example: 'Risiko Rendah', description: 'Tingkat risiko jatuh Morse', required: false })
+  tingkat_risiko_jatuh?: string;
+
+  @ApiProperty({ example: 'Amlodipine 5mg', description: 'Obat yang dikonsumsi', required: false })
+  obat_dikonsumsi?: string;
+
+  @ApiProperty({ example: 'Hipertensi', description: 'Riwayat penyakit sebelumnya', required: false })
+  riwayat_penyakit?: string;
+
+  @ApiProperty({ example: 98, description: 'Saturasi Oksigen SpO2 (%)', required: false })
+  spo2?: number;
+
+  @ApiProperty({ example: 120, description: 'Gula Darah Sewaktu GDS (mg/dL)', required: false })
+  gds?: number;
 }

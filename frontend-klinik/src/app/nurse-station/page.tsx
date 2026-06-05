@@ -3,6 +3,12 @@ import { API_URL } from '@/lib/api';
 
 import MasterLayout from '@/components/MasterLayout';
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+
+const TtvForm = dynamic(() => import('./components/TtvForm'), { ssr: false });
+const KeluhanAsesmenForm = dynamic(() => import('./components/KeluhanAsesmenForm'), { ssr: false });
+const RiwayatAlergiForm = dynamic(() => import('./components/RiwayatAlergiForm'), { ssr: false });
+const HasilLabAiForm = dynamic(() => import('./components/HasilLabAiForm'), { ssr: false });
 
 const formatLocalDate = (dateInput?: string | Date) => {
   const d = dateInput ? new Date(dateInput) : new Date();
@@ -25,6 +31,51 @@ const hitungUmur = (tglLahir: string) => {
   return `${age} Tahun`;
 };
 
+// Fungsi pembantu untuk menghitung IMT (BMI) secara otomatis
+const hitungImt = (bb: string, tb: string) => {
+  const weight = parseFloat(bb);
+  const height = parseFloat(tb) / 100; // cm to meters
+  if (!weight || !height) return '-';
+  const imt = weight / (height * height);
+  const roundedImt = imt.toFixed(1);
+  let category = 'Normal';
+  if (imt < 18.5) category = 'Kurus';
+  else if (imt >= 18.5 && imt <= 22.9) category = 'Normal';
+  else if (imt >= 23 && imt <= 24.9) category = 'Kelebihan BB';
+  else if (imt >= 25 && imt <= 29.9) category = 'Gemuk';
+  else category = 'Obesitas';
+  return `${roundedImt} — ${category}`;
+};
+
+const getBpGrade = (sistole: number, diastole: number) => {
+  if (sistole >= 160 || diastole >= 100) return 'Hipertensi Grade 2';
+  if (sistole >= 140 || diastole >= 90) return 'Hipertensi Grade 1';
+  if ((sistole >= 120 && sistole <= 139) || (diastole >= 80 && diastole <= 89)) return 'Prehipertensi';
+  return 'Normal';
+};
+
+const getBpComparisonText = (curSistole: number, curDiastole: number, prevSistole: number | null, prevDiastole: number | null) => {
+  if (prevSistole === null || prevDiastole === null) return '';
+  if (curSistole > prevSistole || curDiastole > prevDiastole) {
+    return `Lebih tinggi dari kunjungan terakhir (${prevSistole}/${prevDiastole}).`;
+  }
+  if (curSistole < prevSistole && curDiastole < prevDiastole) {
+    return `Lebih rendah dari kunjungan terakhir (${prevSistole}/${prevDiastole}).`;
+  }
+  return `Stabil dibandingkan kunjungan terakhir (${prevSistole}/${prevDiastole}).`;
+};
+
+const getGdsComparisonText = (curGds: number, prevGds: number | null) => {
+  if (prevGds === null) return '';
+  if (curGds > prevGds) {
+    return `Naik dari kunjungan terakhir (${prevGds}).`;
+  }
+  if (curGds < prevGds) {
+    return `Turun dari kunjungan terakhir (${prevGds}).`;
+  }
+  return `Sama dengan kunjungan terakhir (${prevGds}).`;
+};
+
 export default function NurseStationDashboard() {
   const [antreanPoliList, setAntreanPoliList] = useState<any[]>([]);
   const [activeAntrean, setActiveAntrean] = useState<any>(null);
@@ -39,12 +90,247 @@ export default function NurseStationDashboard() {
     diastole: '',
     suhu_tubuh: '',
     berat_badan: '',
+    tinggi_badan: '',
+    nadi: '',
+    spo2: '',
+    gds: '',
     alergi_makanan: '',
     alergi_obat: '',
+    skala_nyeri: 0,
+    skala_risiko_jatuh: 0,
+    tingkat_risiko_jatuh: 'Risiko Rendah',
+    obat_dikonsumsi: '',
+    riwayat_penyakit: '',
   });
+
+  const [morse1, setMorse1] = useState(0); // Riwayat jatuh
+  const [morse2, setMorse2] = useState(0); // Diagnosis sekunder
+  const [morse3, setMorse3] = useState(0); // Alat bantu
+  const [morse4, setMorse4] = useState(0); // Terapi IV
+  const [morse5, setMorse5] = useState(0); // Gaya berjalan
+  const [morse6, setMorse6] = useState(0); // Status mental
+
+  useEffect(() => {
+    const score = morse1 + morse2 + morse3 + morse4 + morse5 + morse6;
+    let tingkat = 'Risiko Rendah';
+    if (score >= 25 && score <= 50) tingkat = 'Risiko Sedang';
+    if (score > 50) tingkat = 'Risiko Tinggi';
+    
+    setFormTriage(prev => ({
+      ...prev,
+      skala_risiko_jatuh: score,
+      tingkat_risiko_jatuh: tingkat
+    }));
+  }, [morse1, morse2, morse3, morse4, morse5, morse6]);
+
+  const parseKeluhan = (text: string) => {
+    if (!text) return { keluhan: '', tipe: 'Kontrol rutin', onset: '3 hari', gejala: [] as string[], metode: 'wong-baker' as 'wong-baker' | 'nrs' | 'vas' | 'flacc' | 'painad' };
+    const parts = text.split('\n\n[Tipe Kunjungan:');
+    const keluhan = parts[0]?.trim() || '';
+    let tipe = 'Kontrol rutin';
+    let onset = '3 hari';
+    let gejala: string[] = [];
+    let metode: 'wong-baker' | 'nrs' | 'vas' | 'flacc' | 'painad' = 'wong-baker';
+    
+    if (parts[1]) {
+      const tipePart = parts[1].split(']')[0]?.trim();
+      if (tipePart) tipe = tipePart;
+      
+      const onsetPart = text.match(/\[Onset Keluhan:\s*([^\]]+)\]/);
+      if (onsetPart && onsetPart[1]) onset = onsetPart[1].trim();
+      
+      const gejalaPart = text.match(/\[Gejala Tambahan:\s*([^\]]+)\]/);
+      if (gejalaPart && gejalaPart[1]) {
+        gejala = gejalaPart[1].split(',').map(s => s.trim());
+      }
+
+      const metodePart = text.match(/\[Metode Nyeri:\s*([^\]]+)\]/);
+      if (metodePart && metodePart[1]) {
+        const m = metodePart[1].trim().toLowerCase();
+        if (m === 'nrs' || m === 'vas' || m === 'wong-baker' || m === 'flacc' || m === 'painad') {
+          metode = m as 'wong-baker' | 'nrs' | 'vas' | 'flacc' | 'painad';
+        }
+      }
+    }
+    return { keluhan, tipe, onset, gejala, metode };
+  };
+
+  const populateFormTriage = (savedTriage: any) => {
+    if (savedTriage) {
+      const parsed = parseKeluhan(savedTriage.keluhan_utama || '');
+      setFormTriage({
+        keluhan_utama: parsed.keluhan,
+        sistole: savedTriage.sistole?.toString() || '',
+        diastole: savedTriage.diastole?.toString() || '',
+        suhu_tubuh: savedTriage.suhu_tubuh?.toString() || '',
+        berat_badan: savedTriage.berat_badan?.toString() || '',
+        tinggi_badan: savedTriage.tinggi_badan?.toString() || '',
+        nadi: savedTriage.detak_jantung?.toString() || '',
+        spo2: savedTriage.spo2?.toString() || '',
+        gds: savedTriage.gds?.toString() || '',
+        alergi_makanan: savedTriage.alergi_makanan || '',
+        alergi_obat: savedTriage.alergi_obat || '',
+        skala_nyeri: savedTriage.skala_nyeri || 0,
+        skala_risiko_jatuh: savedTriage.skala_risiko_jatuh || 0,
+        tingkat_risiko_jatuh: savedTriage.tingkat_risiko_jatuh || 'Risiko Rendah',
+        obat_dikonsumsi: savedTriage.obat_dikonsumsi || '',
+        riwayat_penyakit: savedTriage.riwayat_penyakit || '',
+      });
+      setTipeKunjungan(parsed.tipe);
+      setOnsetKeluhan(parsed.onset);
+      setGejalaTambahan(parsed.gejala);
+      setMetodeNyeri(parsed.metode);
+
+      setNyeriCollapsed(savedTriage.skala_nyeri === 0 || !savedTriage.skala_nyeri);
+      setRisikoJatuhCollapsed(savedTriage.skala_risiko_jatuh === 0 || !savedTriage.skala_risiko_jatuh);
+
+      // Set Morse state scores from saved database total for visual display
+      setMorse1(0);
+      setMorse2(0);
+      setMorse3(0);
+      setMorse4(0);
+      setMorse5(0);
+      setMorse6(0);
+    } else {
+      setFormTriage({
+        keluhan_utama: '',
+        sistole: '',
+        diastole: '',
+        suhu_tubuh: '',
+        berat_badan: '',
+        tinggi_badan: '',
+        nadi: '',
+        spo2: '',
+        gds: '',
+        alergi_makanan: '',
+        alergi_obat: '',
+        skala_nyeri: 0,
+        skala_risiko_jatuh: 0,
+        tingkat_risiko_jatuh: 'Risiko Rendah',
+        obat_dikonsumsi: '',
+        riwayat_penyakit: '',
+      });
+      setTipeKunjungan('Kontrol rutin');
+      setOnsetKeluhan('3 hari');
+      setGejalaTambahan([]);
+      setMetodeNyeri('wong-baker');
+      
+      setNyeriCollapsed(true);
+      setRisikoJatuhCollapsed(true);
+
+      // Reset Morse choices
+      setMorse1(0);
+      setMorse2(0);
+      setMorse3(0);
+      setMorse4(0);
+      setMorse5(0);
+      setMorse6(0);
+    }
+  };
+
+  const resetFormTriage = () => {
+    setFormTriage({
+      keluhan_utama: '',
+      sistole: '',
+      diastole: '',
+      suhu_tubuh: '',
+      berat_badan: '',
+      tinggi_badan: '',
+      nadi: '',
+      spo2: '',
+      gds: '',
+      alergi_makanan: '',
+      alergi_obat: '',
+      skala_nyeri: 0,
+      skala_risiko_jatuh: 0,
+      tingkat_risiko_jatuh: 'Risiko Rendah',
+      obat_dikonsumsi: '',
+      riwayat_penyakit: '',
+    });
+    setTipeKunjungan('Kontrol rutin');
+    setOnsetKeluhan('3 hari');
+    setGejalaTambahan([]);
+    setMetodeNyeri('wong-baker');
+    
+    setNyeriCollapsed(true);
+    setRisikoJatuhCollapsed(true);
+
+    setMorse1(0);
+    setMorse2(0);
+    setMorse3(0);
+    setMorse4(0);
+    setMorse5(0);
+    setMorse6(0);
+  };
 
   const [historyKunjungan, setHistoryKunjungan] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+
+  // Mencari riwayat TTV kunjungan terakhir yang memiliki data asesmen keperawatan dan berbeda dari kunjungan aktif
+  const prevTriage = (() => {
+    if (!historyKunjungan || historyKunjungan.length === 0) return null;
+    
+    // Sort visits by tgl_kunjungan descending
+    const sortedVisits = [...historyKunjungan].sort((a, b) => {
+      return new Date(b.tgl_kunjungan).getTime() - new Date(a.tgl_kunjungan).getTime();
+    });
+
+    const activeKunjunganId = activeAntrean?.kunjungan?.id_kunjungan || activeAntrean?.id_kunjungan || activeAntrean?.kunjungan?.id;
+    const prevVisit = sortedVisits.find(v => {
+      const isDifferent = activeKunjunganId ? v.id_kunjungan !== activeKunjunganId && v.id !== activeKunjunganId : true;
+      return isDifferent && v.asesmen_keperawatan && v.asesmen_keperawatan.length > 0;
+    });
+
+    return prevVisit ? prevVisit.asesmen_keperawatan[0] : null;
+  })();
+
+  const getSistoleBorderClass = () => {
+    const val = parseInt(formTriage.sistole);
+    if (!val) return 'border-slate-200 focus:border-red-500 focus:ring-red-500/20 bg-white';
+    if (val < 90 || val >= 140) return 'border-rose-400 focus:border-rose-600 focus:ring-rose-500/20 bg-rose-50/5 text-rose-800';
+    if (val >= 120 && val < 140) return 'border-amber-400 focus:border-amber-600 focus:ring-amber-500/20 bg-amber-50/5 text-amber-800';
+    return 'border-emerald-400 focus:border-emerald-600 focus:ring-emerald-500/20 bg-emerald-50/5 text-emerald-800';
+  };
+
+  const getDiastoleBorderClass = () => {
+    const val = parseInt(formTriage.diastole);
+    if (!val) return 'border-slate-200 focus:border-red-500 focus:ring-red-500/20 bg-white';
+    if (val < 60 || val >= 90) return 'border-rose-400 focus:border-rose-600 focus:ring-rose-500/20 bg-rose-50/5 text-rose-800';
+    if (val >= 80 && val < 90) return 'border-amber-400 focus:border-amber-600 focus:ring-amber-500/20 bg-amber-50/5 text-amber-800';
+    return 'border-emerald-400 focus:border-emerald-600 focus:ring-emerald-500/20 bg-emerald-50/5 text-emerald-800';
+  };
+
+  const getNadiBorderClass = () => {
+    const val = parseInt(formTriage.nadi);
+    if (!val) return 'border-slate-200 focus:border-red-500 focus:ring-red-500/20 bg-white';
+    if (val < 50 || val > 120) return 'border-rose-400 focus:border-rose-600 focus:ring-rose-500/20 bg-rose-50/5 text-rose-800';
+    if ((val >= 50 && val < 60) || (val > 100 && val <= 120)) return 'border-amber-400 focus:border-amber-600 focus:ring-amber-500/20 bg-amber-50/5 text-amber-800';
+    return 'border-emerald-400 focus:border-emerald-600 focus:ring-emerald-500/20 bg-emerald-50/5 text-emerald-800';
+  };
+
+  const getSuhuBorderClass = () => {
+    const val = parseFloat(formTriage.suhu_tubuh);
+    if (!val) return 'border-slate-200 focus:border-red-500 focus:ring-red-500/20 bg-white';
+    if (val < 35.0 || val > 38.0) return 'border-rose-400 focus:border-rose-600 focus:ring-rose-500/20 bg-rose-50/5 text-rose-800';
+    if ((val >= 35.0 && val < 36.5) || (val > 37.5 && val <= 38.0)) return 'border-amber-400 focus:border-amber-600 focus:ring-amber-500/20 bg-amber-50/5 text-amber-800';
+    return 'border-emerald-400 focus:border-emerald-600 focus:ring-emerald-500/20 bg-emerald-50/5 text-emerald-800';
+  };
+
+  const getSpo2BorderClass = () => {
+    const val = parseInt(formTriage.spo2);
+    if (!val) return 'border-slate-200 focus:border-red-500 focus:ring-red-500/20 bg-white';
+    if (val < 90) return 'border-rose-400 focus:border-rose-600 focus:ring-rose-500/20 bg-rose-50/5 text-rose-800';
+    if (val >= 90 && val < 95) return 'border-amber-400 focus:border-amber-600 focus:ring-amber-500/20 bg-amber-50/5 text-rose-800';
+    return 'border-emerald-400 focus:border-emerald-600 focus:ring-emerald-500/20 bg-emerald-50/5 text-emerald-800';
+  };
+
+  const getGdsBorderClass = () => {
+    const val = parseInt(formTriage.gds);
+    if (!val) return 'border-slate-200 focus:border-red-500 focus:ring-red-500/20 bg-white';
+    if (val >= 200) return 'border-rose-400 focus:border-rose-600 focus:ring-rose-500/20 bg-rose-50/5 text-rose-800';
+    if (val >= 140 && val < 200) return 'border-amber-400 focus:border-amber-600 focus:ring-amber-500/20 bg-amber-50/5 text-amber-800';
+    return 'border-emerald-400 focus:border-emerald-600 focus:ring-emerald-500/20 bg-emerald-50/5 text-emerald-800';
+  };
 
   const [loading, setLoading] = useState(false);
 
@@ -53,7 +339,17 @@ export default function NurseStationDashboard() {
   const [masterDokter, setMasterDokter] = useState<any[]>([]);
 
   // State untuk berpindah sub-formulir / halaman form
-  const [activeFormTab, setActiveFormTab] = useState<'ttv' | 'risiko_jatuh' | 'nyeri' | 'riwayat'>('ttv');
+  const [activeFormTab, setActiveFormTab] = useState<'ttv' | 'keluhan_asesmen' | 'riwayat' | 'hasil_lab'>('ttv');
+
+  // State baru untuk Keluhan & Anamnesis Awal
+  const [tipeKunjungan, setTipeKunjungan] = useState('Kontrol rutin');
+  const [onsetKeluhan, setOnsetKeluhan] = useState('3 hari');
+  const [gejalaTambahan, setGejalaTambahan] = useState<string[]>([]);
+  
+  // State baru untuk Collapsible Accordion Asesmen
+  const [nyeriCollapsed, setNyeriCollapsed] = useState(true);
+  const [risikoJatuhCollapsed, setRisikoJatuhCollapsed] = useState(true);
+  const [metodeNyeri, setMetodeNyeri] = useState<'wong-baker' | 'nrs' | 'vas' | 'flacc' | 'painad'>('wong-baker');
 
   const fetchMasterData = async () => {
     try {
@@ -138,28 +434,7 @@ export default function NurseStationDashboard() {
     }
 
     // Load saved triage data if it exists
-    const savedTriage = antrean.kunjungan?.asesmen_keperawatan?.[0];
-    if (savedTriage) {
-      setFormTriage({
-        keluhan_utama: savedTriage.keluhan_utama || '',
-        sistole: savedTriage.sistole?.toString() || '',
-        diastole: savedTriage.diastole?.toString() || '',
-        suhu_tubuh: savedTriage.suhu_tubuh?.toString() || '',
-        berat_badan: savedTriage.berat_badan?.toString() || '',
-        alergi_makanan: savedTriage.alergi_makanan || '',
-        alergi_obat: savedTriage.alergi_obat || '',
-      });
-    } else {
-      setFormTriage({
-        keluhan_utama: '',
-        sistole: '',
-        diastole: '',
-        suhu_tubuh: '',
-        berat_badan: '',
-        alergi_makanan: '',
-        alergi_obat: '',
-      });
-    }
+    populateFormTriage(antrean.kunjungan?.asesmen_keperawatan?.[0]);
   };
 
   // FUNGSI 2: Memanggil Suara (Robot TTS)
@@ -186,28 +461,7 @@ export default function NurseStationDashboard() {
     }
 
     // Load saved triage data if it exists
-    const savedTriage = antrean.kunjungan?.asesmen_keperawatan?.[0];
-    if (savedTriage) {
-      setFormTriage({
-        keluhan_utama: savedTriage.keluhan_utama || '',
-        sistole: savedTriage.sistole?.toString() || '',
-        diastole: savedTriage.diastole?.toString() || '',
-        suhu_tubuh: savedTriage.suhu_tubuh?.toString() || '',
-        berat_badan: savedTriage.berat_badan?.toString() || '',
-        alergi_makanan: savedTriage.alergi_makanan || '',
-        alergi_obat: savedTriage.alergi_obat || '',
-      });
-    } else {
-      setFormTriage({
-        keluhan_utama: '',
-        sistole: '',
-        diastole: '',
-        suhu_tubuh: '',
-        berat_badan: '',
-        alergi_makanan: '',
-        alergi_obat: '',
-      });
-    }
+    populateFormTriage(antrean.kunjungan?.asesmen_keperawatan?.[0]);
 
     const nomorEja = antrean.no_antrean.split('').join(' ');
     const namaPasien = antrean.kunjungan?.pasien?.nama_lengkap || '';
@@ -275,7 +529,7 @@ export default function NurseStationDashboard() {
 
       alert(`✅ Pelayanan Sukses!\nStatus pelayanan pasien ${antrean.kunjungan?.pasien?.nama_lengkap} berhasil diselesaikan dan diteruskan ke antrean dokter.`);
       
-      setFormTriage({ keluhan_utama: '', sistole: '', diastole: '', suhu_tubuh: '', berat_badan: '', alergi_makanan: '', alergi_obat: '' });
+      resetFormTriage();
       setHistoryKunjungan([]);
       setActiveAntrean(null);
       setActiveFormTab('ttv');
@@ -304,6 +558,8 @@ export default function NurseStationDashboard() {
       return;
     }
     
+    const fullKeluhanUtama = `${formTriage.keluhan_utama || ''} \n\n[Tipe Kunjungan: ${tipeKunjungan}] \n[Onset Keluhan: ${onsetKeluhan}]` + (gejalaTambahan.length > 0 ? ` \n[Gejala Tambahan: ${gejalaTambahan.join(', ')}]` : '') + ` \n[Metode Nyeri: ${metodeNyeri}]`;
+
     setLoading(true);
     try {
       const resTriage = await fetch(`${API_URL}/asesmen-keperawatan`, {
@@ -312,13 +568,22 @@ export default function NurseStationDashboard() {
         body: JSON.stringify({
           id_kunjungan: activeAntrean.id_kunjungan,
           id_perawat: 'PRW-HNZ-001',
-          keluhan_utama: formTriage.keluhan_utama,
-          sistole: parseInt(formTriage.sistole),
-          diastole: parseInt(formTriage.diastole),
-          suhu_tubuh: parseFloat(formTriage.suhu_tubuh),
-          berat_badan: parseFloat(formTriage.berat_badan),
+          keluhan_utama: fullKeluhanUtama,
+          sistole: parseInt(formTriage.sistole) || null,
+          diastole: parseInt(formTriage.diastole) || null,
+          suhu_tubuh: parseFloat(formTriage.suhu_tubuh) || null,
+          berat_badan: parseFloat(formTriage.berat_badan) || null,
+          tinggi_badan: parseFloat(formTriage.tinggi_badan) || null,
+          detak_jantung: parseInt(formTriage.nadi) || null,
+          spo2: parseInt(formTriage.spo2) || null,
+          gds: parseInt(formTriage.gds) || null,
           alergi_makanan: formTriage.alergi_makanan,
           alergi_obat: formTriage.alergi_obat,
+          skala_nyeri: formTriage.skala_nyeri,
+          skala_risiko_jatuh: formTriage.skala_risiko_jatuh,
+          tingkat_risiko_jatuh: formTriage.tingkat_risiko_jatuh,
+          obat_dikonsumsi: formTriage.obat_dikonsumsi,
+          riwayat_penyakit: formTriage.riwayat_penyakit,
         }),
       });
 
@@ -352,7 +617,7 @@ export default function NurseStationDashboard() {
 
       alert(`✅ Triage & Pelayanan Sukses!\nData rekam medis awal pasien ${activeAntrean.kunjungan?.pasien?.nama_lengkap} berhasil disimpan dan diteruskan ke antrean dokter.`);
       
-      setFormTriage({ keluhan_utama: '', sistole: '', diastole: '', suhu_tubuh: '', berat_badan: '', alergi_makanan: '', alergi_obat: '' });
+      resetFormTriage();
       setActiveAntrean(null);
       setActiveFormTab('ttv');
       fetchAntreanPoli(); 
@@ -381,8 +646,8 @@ export default function NurseStationDashboard() {
     <MasterLayout>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* PANEL KIRI: DAFTAR ANTREAN TRIAGE (PISAH KLIK & PANGGIL - LEBAR 3 KOLOM) */}
-        <aside className="lg:col-span-3 bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full min-h-[75vh]">
+        {/* PANEL KIRI: DAFTAR ANTREAN TRIAGE (PISAH KLIK & PANGGIL - LEBAR 2 KOLOM) */}
+        <aside className="lg:col-span-2 bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full min-h-[75vh]">
           
           <div className="flex flex-col mb-4 pb-4 border-b border-slate-100 gap-3">
             <div className="flex justify-between items-center">
@@ -392,13 +657,15 @@ export default function NurseStationDashboard() {
               <span className="bg-red-50 text-red-600 text-xs font-black px-3 py-1 rounded-full">{filteredAntreanList.length} Pasien</span>
             </div>
             
-            <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200/60">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 whitespace-nowrap">Filter Tgl:</label>
+            <div className="flex flex-col gap-1 text-left bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1 select-none">
+                📅 Filter Tanggal Antrean
+              </label>
               <input 
                 type="date" 
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 bg-white"
+                className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 bg-white cursor-pointer"
               />
             </div>
 
@@ -548,8 +815,8 @@ export default function NurseStationDashboard() {
           </div>
         </aside>
 
-        {/* PANEL TENGAH: KARTU IDENTITAS & CONTAINER FORM BERJENJANG (5 KOLOM) */}
-        <main className="lg:col-span-5 flex flex-col gap-6">
+        {/* PANEL TENGAH: KARTU IDENTITAS & CONTAINER FORM BERJENJANG (7 KOLOM) */}
+        <main className="lg:col-span-7 flex flex-col gap-6">
           {/* SECTION A: KARTU IDENTITAS PASIEN (MUNCUL JIKA PASIEN DIPILIH) */}
           {activeAntrean ? (
             <div className={`bg-white rounded-2xl p-3 px-4 shadow-sm border flex flex-col relative overflow-hidden transition-all ${
@@ -731,25 +998,14 @@ export default function NurseStationDashboard() {
               </button>
               <button
                 type="button"
-                onClick={() => setActiveFormTab('risiko_jatuh')}
+                onClick={() => setActiveFormTab('keluhan_asesmen')}
                 className={`px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${
-                  activeFormTab === 'risiko_jatuh'
+                  activeFormTab === 'keluhan_asesmen'
                     ? 'bg-amber-50 text-amber-700 border border-amber-200 shadow-sm'
                     : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
                 }`}
               >
-                ⚠️ Risiko Jatuh
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveFormTab('nyeri')}
-                className={`px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${
-                  activeFormTab === 'nyeri'
-                    ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-                }`}
-              >
-                💥 Asesmen Nyeri
+                💬 Keluhan & Asesmen
               </button>
               <button
                 type="button"
@@ -761,6 +1017,17 @@ export default function NurseStationDashboard() {
                 }`}
               >
                 📋 Riwayat & Alergi
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveFormTab('hasil_lab')}
+                className={`px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${
+                  activeFormTab === 'hasil_lab'
+                    ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm shadow-indigo-100'
+                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                }`}
+              >
+                🧪 Hasil Lab & AI
               </button>
             </div>
           )}
@@ -776,123 +1043,71 @@ export default function NurseStationDashboard() {
               : 'border-slate-200 opacity-60 pointer-events-none'
           }`}>
             
-            {/* 1. HALAMAN FORM 1: PEMERIKSAAN TTV */}
-            {activeFormTab === 'ttv' && (
+            {activeFormTab !== 'hasil_lab' ? (
               <form onSubmit={handleSimpanTriage} className="space-y-6">
-                <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-                  <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                    <span className="text-red-600">📝</span> Input Asesmen Keperawatan (TTV)
-                  </h2>
-                </div>
+                
+                {/* 1. HALAMAN FORM 1: PEMERIKSAAN TTV */}
+                {activeFormTab === 'ttv' && (
+                  <TtvForm
+                    formTriage={formTriage}
+                    setFormTriage={setFormTriage}
+                    activeAntrean={activeAntrean}
+                    isActiveBatal={isActiveBatal}
+                    isActiveSelesai={isActiveSelesai}
+                    prevTriage={prevTriage}
+                  />
+                )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {/* KELUHAN UTAMA */}
-                  <div className="space-y-2">
-                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Keluhan Utama</label>
-                    <textarea 
-                      required 
-                      disabled={!activeAntrean || isActiveBatal || isActiveSelesai}
-                      rows={6}
-                      placeholder={
-                        isActiveBatal 
-                          ? 'Layanan dikunci karena pasien telah dibatalkan.' 
-                          : isActiveSelesai 
-                            ? 'Pemeriksaan triage telah diselesaikan (Mode Read-Only).' 
-                            : 'Catat keluhan subjektif pasien di sini...'
-                      }
-                      value={formTriage.keluhan_utama} 
-                      onChange={(e) => setFormTriage({...formTriage, keluhan_utama: e.target.value})}
-                      className="w-full rounded-2xl border-2 border-slate-200 p-4 bg-slate-50 text-sm font-medium text-slate-800 focus:bg-white focus:ring-4 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all resize-none disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed"
-                    ></textarea>
-                  </div>
-
-                  {/* TANDA-TANDA VITAL (TTV) CARD */}
-                  <div className={`p-5 rounded-2xl border space-y-5 transition-all ${
-                    isActiveBatal 
-                      ? 'bg-rose-50/20 border-rose-100' 
-                      : isActiveSelesai
-                        ? 'bg-emerald-50/20 border-emerald-100'
-                        : 'bg-red-50/50 border-red-100'
-                  }`}>
-                    <h3 className={`text-xs font-black uppercase tracking-widest flex items-center gap-2 ${
-                      isActiveBatal 
-                        ? 'text-rose-600' 
-                        : isActiveSelesai
-                          ? 'text-emerald-600'
-                          : 'text-red-600'
-                    }`}>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      Pemeriksaan Tanda Vital
-                    </h3>
+                {/* 2. HALAMAN FORM 2: KELUHAN & ASESMEN */}
+                {activeFormTab === 'keluhan_asesmen' && (
+                  <KeluhanAsesmenForm
+                    formTriage={formTriage}
+                    setFormTriage={setFormTriage}
+                    activeAntrean={activeAntrean}
+                    isActiveBatal={isActiveBatal}
+                    isActiveSelesai={isActiveSelesai}
                     
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Tensi */}
-                      <div className="col-span-2 flex gap-3 items-end">
-                        <div className="flex-1">
-                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Sistole</label>
-                          <div className="relative">
-                            <input type="number" required disabled={!activeAntrean || isActiveBatal || isActiveSelesai} placeholder="120" value={formTriage.sistole} onChange={(e) => setFormTriage({...formTriage, sistole: e.target.value})} className="w-full rounded-xl border-2 border-slate-200 p-3 pl-4 pr-10 text-lg font-black text-slate-800 focus:border-red-500 outline-none transition-all bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed" />
-                            <span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400">mmHg</span>
-                          </div>
-                        </div>
-                        <span className="text-2xl font-light text-slate-300 pb-2">/</span>
-                        <div className="flex-1">
-                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Diastole</label>
-                          <div className="relative">
-                            <input type="number" required disabled={!activeAntrean || isActiveBatal || isActiveSelesai} placeholder="80" value={formTriage.diastole} onChange={(e) => setFormTriage({...formTriage, diastole: e.target.value})} className="w-full rounded-xl border-2 border-slate-200 p-3 pl-4 pr-10 text-lg font-black text-slate-800 focus:border-red-500 outline-none transition-all bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed" />
-                            <span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400">mmHg</span>
-                          </div>
-                        </div>
-                      </div>
+                    tipeKunjungan={tipeKunjungan}
+                    setTipeKunjungan={setTipeKunjungan}
+                    onsetKeluhan={onsetKeluhan}
+                    setOnsetKeluhan={setOnsetKeluhan}
+                    gejalaTambahan={gejalaTambahan}
+                    setGejalaTambahan={setGejalaTambahan}
 
-                      {/* Suhu & BB */}
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Suhu Tubuh</label>
-                        <div className="relative">
-                          <input type="number" step="0.1" required disabled={!activeAntrean || isActiveBatal || isActiveSelesai} placeholder="36.5" value={formTriage.suhu_tubuh} onChange={(e) => setFormTriage({...formTriage, suhu_tubuh: e.target.value})} className="w-full rounded-xl border-2 border-slate-200 p-3 pl-4 pr-8 text-lg font-black text-slate-800 focus:border-red-500 outline-none transition-all bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed" />
-                          <span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400">°C</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Berat Badan</label>
-                        <div className="relative">
-                          <input type="number" step="0.1" required disabled={!activeAntrean || isActiveBatal || isActiveSelesai} placeholder="65" value={formTriage.berat_badan} onChange={(e) => setFormTriage({...formTriage, berat_badan: e.target.value})} className="w-full rounded-xl border-2 border-slate-200 p-3 pl-4 pr-8 text-lg font-black text-slate-800 focus:border-red-500 outline-none transition-all bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed" />
-                          <span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400">kg</span>
-                        </div>
-                      </div>
+                    nyeriCollapsed={nyeriCollapsed}
+                    setNyeriCollapsed={setNyeriCollapsed}
+                    risikoJatuhCollapsed={risikoJatuhCollapsed}
+                    setRisikoJatuhCollapsed={setRisikoJatuhCollapsed}
+                    metodeNyeri={metodeNyeri}
+                    setMetodeNyeri={setMetodeNyeri}
 
-                      {/* Alergi Makanan & Obat */}
-                      <div className="col-span-2 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 mt-2">
-                        <div>
-                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Alergi Makanan</label>
-                          <input
-                            type="text"
-                            disabled={!activeAntrean || isActiveBatal || isActiveSelesai}
-                            placeholder="Contoh: Seafood, Kacang (kosongkan jika tdk ada)"
-                            value={formTriage.alergi_makanan}
-                            onChange={(e) => setFormTriage({...formTriage, alergi_makanan: e.target.value})}
-                            className="w-full rounded-xl border-2 border-slate-200 p-3.5 pl-4 text-sm font-semibold text-slate-800 focus:border-red-500 outline-none transition-all bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Alergi Obat</label>
-                          <input
-                            type="text"
-                            disabled={!activeAntrean || isActiveBatal || isActiveSelesai}
-                            placeholder="Contoh: Penicillin, Sulfa (kosongkan jika tdk ada)"
-                            value={formTriage.alergi_obat}
-                            onChange={(e) => setFormTriage({...formTriage, alergi_obat: e.target.value})}
-                            className="w-full rounded-xl border-2 border-slate-200 p-3.5 pl-4 text-sm font-semibold text-slate-800 focus:border-red-500 outline-none transition-all bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                    morse1={morse1}
+                    setMorse1={setMorse1}
+                    morse2={morse2}
+                    setMorse2={setMorse2}
+                    morse3={morse3}
+                    setMorse3={setMorse3}
+                    morse4={morse4}
+                    setMorse4={setMorse4}
+                    morse5={morse5}
+                    setMorse5={setMorse5}
+                    morse6={morse6}
+                    setMorse6={setMorse6}
+                  />
+                )}
 
-                {/* ACTION BUTTON */}
+                {/* 3. HALAMAN FORM 3: RIWAYAT & ALERGI */}
+                {activeFormTab === 'riwayat' && (
+                  <RiwayatAlergiForm
+                    formTriage={formTriage}
+                    setFormTriage={setFormTriage}
+                    activeAntrean={activeAntrean}
+                    isActiveBatal={isActiveBatal}
+                    isActiveSelesai={isActiveSelesai}
+                  />
+                )}
+
+                {/* ACTION BUTTON AT THE BOTTOM OF THE CARD */}
                 <div className="pt-4 border-t border-slate-100">
                   <button 
                     type="submit" 
@@ -910,155 +1125,24 @@ export default function NurseStationDashboard() {
                         : '💾 SIMPAN & TERUSKAN KE DOKTER SPESIALIS'}
                   </button>
                 </div>
+
               </form>
+            ) : (
+              <HasilLabAiForm
+                activeAntrean={activeAntrean}
+                isActiveBatal={isActiveBatal}
+                isActiveSelesai={isActiveSelesai}
+              />
             )}
-
-            {/* 2. HALAMAN FORM 2: RISIKO JATUH */}
-            {activeFormTab === 'risiko_jatuh' && (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-                  <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                    <span className="text-amber-500">⚠️</span> Asesmen Risiko Jatuh (Skala Morse)
-                  </h2>
-                  <span className="bg-amber-50 text-amber-600 text-xs font-black px-3 py-1 rounded-full">Fase Pengembangan</span>
-                </div>
-
-                <div className="bg-amber-50/40 p-5 rounded-2xl border border-amber-100 space-y-4">
-                  <p className="text-xs font-bold text-amber-700 leading-relaxed">
-                    ℹ️ Modul Asesmen Risiko Jatuh akan mengukur probabilitas pasien jatuh berdasarkan riwayat medis, diagnosis sekunder, bantuan ambulasi, terapi intravena, gaya berjalan, dan status mental.
-                  </p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
-                      { label: 'Riwayat Jatuh (3 bulan terakhir)', pts: 25 },
-                      { label: 'Diagnosis Sekunder (>= 2 penyakit)', pts: 15 },
-                      { label: 'Menggunakan Alat Bantu Jalan (kruk/tongkat)', pts: 15 },
-                      { label: 'Terpasang Infus / Terapi Intravena', pts: 20 },
-                      { label: 'Gaya Berjalan Lemah / Terganggu', pts: 10 },
-                      { label: 'Status Mental (Sadar akan keterbatasan)', pts: 0 }
-                    ].map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-center bg-white p-3.5 rounded-xl border border-slate-200/60 opacity-60">
-                        <span className="text-xs font-bold text-slate-700">{item.label}</span>
-                        <span className="bg-slate-100 text-slate-600 text-[10px] font-black px-2 py-0.5 rounded-md">+{item.pts} Pts</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/60 flex items-center justify-center text-center">
-                  <div>
-                    <span className="text-3xl block mb-2">🚀</span>
-                    <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">Fitur Segera Hadir</h3>
-                    <p className="text-[11px] font-medium text-slate-400 mt-1 max-w-sm leading-relaxed">
-                      Modul evaluasi risiko jatuh otomatis akan diintegrasikan dengan gelang penanda risiko pasien pada fase pengembangan berikutnya.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 3. HALAMAN FORM 3: ASESMEN NYERI */}
-            {activeFormTab === 'nyeri' && (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-                  <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                    <span className="text-indigo-600">💥</span> Asesmen Skala Nyeri (Wong-Baker)
-                  </h2>
-                  <span className="bg-indigo-50 text-indigo-600 text-xs font-black px-3 py-1 rounded-full">Fase Pengembangan</span>
-                </div>
-
-                <div className="bg-indigo-50/40 p-5 rounded-2xl border border-indigo-100 space-y-5">
-                  <p className="text-xs font-bold text-indigo-700 leading-relaxed">
-                    ℹ️ Modul Asesmen Nyeri Wong-Baker membantu mendeteksi tingkat keparahan nyeri subjektif pasien melalui skala ekspresi wajah numerik (0-10).
-                  </p>
-
-                  <div className="grid grid-cols-6 gap-2 text-center">
-                    {[
-                      { emoji: '😊', desc: 'Tidak Nyeri', num: 0, color: 'bg-emerald-50 text-emerald-600' },
-                      { emoji: '🙂', desc: 'Sedikit Nyeri', num: 2, color: 'bg-green-50 text-green-600' },
-                      { emoji: '😐', desc: 'Nyeri Sedang', num: 4, color: 'bg-yellow-50 text-yellow-600' },
-                      { emoji: '🙁', desc: 'Lebih Nyeri', num: 6, color: 'bg-orange-50 text-orange-600' },
-                      { emoji: '😢', desc: 'Sangat Nyeri', num: 8, color: 'bg-red-50 text-red-600' },
-                      { emoji: '😭', desc: 'Nyeri Hebat', num: 10, color: 'bg-rose-50 text-rose-600' }
-                    ].map((face, idx) => (
-                      <div key={idx} className="p-3 rounded-xl border border-slate-100 bg-white opacity-60 flex flex-col items-center gap-1">
-                        <span className="text-2xl">{face.emoji}</span>
-                        <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${face.color}`}>{face.num}</span>
-                        <span className="text-[9px] font-bold text-slate-500 whitespace-nowrap">{face.desc}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/60 flex items-center justify-center text-center">
-                  <div>
-                    <span className="text-3xl block mb-2">🎯</span>
-                    <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">Peta Distribusi Nyeri</h3>
-                    <p className="text-[11px] font-medium text-slate-400 mt-1 max-w-sm leading-relaxed">
-                      Dukungan pemilihan diagram titik anatomi tubuh (Body Pain Mapping Tool) sedang disempurnakan untuk integrasi data rekam medis dokter spesialis.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 4. HALAMAN FORM 4: RIWAYAT & ALERGI */}
-            {activeFormTab === 'riwayat' && (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-                  <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                    <span className="text-teal-600">📋</span> Riwayat Kesehatan & Alergi
-                  </h2>
-                  <span className="bg-teal-50 text-teal-600 text-xs font-black px-3 py-1 rounded-full">Fase Pengembangan</span>
-                </div>
-
-                <div className="bg-teal-50/40 p-5 rounded-2xl border border-teal-100 space-y-4">
-                  <p className="text-xs font-bold text-teal-700 leading-relaxed">
-                    ℹ️ Modul Riwayat & Alergi mencatat alergi obat spesifik, riwayat operasi, riwayat penyakit keluarga, serta gaya hidup pasien untuk pengaman peresepan obat di masa mendatang.
-                  </p>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white p-4 rounded-xl border border-slate-200/60 opacity-60 space-y-2">
-                      <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Daftar Kontraindikasi Alergi</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {['Golongan Penicillin', 'Aspirin', 'Udang & Seafood', 'Kacang-kacangan'].map((alg, idx) => (
-                          <span key={idx} className="bg-rose-50 text-rose-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-100">🚫 {alg}</span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="bg-white p-4 rounded-xl border border-slate-200/60 opacity-60 space-y-2">
-                      <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Penyakit Bawaan / Kronis</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {['Diabetes Melitus Tipe 2', 'Hipertensi Primer', 'Asma Bronkial'].map((his, idx) => (
-                          <span key={idx} className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200/60">🩺 {his}</span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/60 flex items-center justify-center text-center">
-                  <div>
-                    <span className="text-3xl block mb-2">⚡</span>
-                    <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">E-Prescription Safeguard</h3>
-                    <p className="text-[11px] font-medium text-slate-400 mt-1 max-w-sm leading-relaxed">
-                      Sistem peringatan otomatis obat kontraindikasi akan langsung menyala pada stasiun kerja apoteker/dokter jika obat yang diresepkan memicu alergi pasien.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
           </div>
 
         </main>
 
-        {/* PANEL KANAN: RIWAYAT KLINIS & ALERGI PASIEN (4 KOLOM) */}
-        <aside className="lg:col-span-4 bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full min-h-[75vh]">
+        {/* PANEL KANAN: RIWAYAT KLINIS & ALERGI PASIEN (3 KOLOM) */}
+        <aside className="lg:col-span-3 bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full min-h-[75vh]">
           <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-100">
             <h2 className="text-sm font-black text-slate-800 tracking-wide flex items-center gap-2">
-              <span className="text-red-600 text-lg">📋</span> Riwayat & Alergi
+              <span className="text-red-650 text-red-600 text-lg">📋</span> Riwayat & Alergi
             </h2>
           </div>
 
@@ -1071,42 +1155,62 @@ export default function NurseStationDashboard() {
             <div className="space-y-5 flex-1 flex flex-col overflow-hidden">
               
               {/* STATUS ALERGI PASIEN */}
-              <div className="space-y-2">
-                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Status Alergi Aktif</span>
+              <div className="space-y-2 overflow-y-auto max-h-[30vh] pr-1 pb-1 scrollbar-thin scrollbar-thumb-slate-200 flex flex-col gap-2 shrink-0">
+                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Status Klinis Aktif</span>
                 
                 {(() => {
                   const alergiMakanan = formTriage.alergi_makanan || historyKunjungan.find(k => k.asesmen_keperawatan?.[0]?.alergi_makanan)?.asesmen_keperawatan?.[0]?.alergi_makanan;
                   const alergiObat = formTriage.alergi_obat || historyKunjungan.find(k => k.asesmen_keperawatan?.[0]?.alergi_obat)?.asesmen_keperawatan?.[0]?.alergi_obat;
+                  const obatDikonsumsi = formTriage.obat_dikonsumsi || historyKunjungan.find(k => k.asesmen_keperawatan?.[0]?.obat_dikonsumsi)?.asesmen_keperawatan?.[0]?.obat_dikonsumsi;
+                  const riwayatPenyakit = formTriage.riwayat_penyakit || historyKunjungan.find(k => k.asesmen_keperawatan?.[0]?.riwayat_penyakit)?.asesmen_keperawatan?.[0]?.riwayat_penyakit;
 
-                  if (!alergiMakanan && !alergiObat) {
+                  if (!alergiMakanan && !alergiObat && !obatDikonsumsi && !riwayatPenyakit) {
                     return (
                       <div className="bg-emerald-50 border border-emerald-200/80 rounded-xl p-3 flex items-center gap-2.5">
                         <span className="text-emerald-600 text-lg">🛡️</span>
                         <div>
                           <h4 className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">Aman / Bebas Alergi</h4>
-                          <p className="text-[10px] font-bold text-emerald-600 mt-0.5">Tidak ada riwayat alergi obat & makanan yang tercatat.</p>
+                          <p className="text-[10px] font-bold text-emerald-650 mt-0.5">Tidak ada kontraindikasi klinis yang terdeteksi.</p>
                         </div>
                       </div>
                     );
                   }
 
                   return (
-                    <div className="space-y-2">
+                    <div className="space-y-2 flex flex-col">
                       {alergiMakanan && (
-                        <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-start gap-2.5 shadow-sm">
-                          <span className="text-rose-600 text-lg">🚫</span>
+                        <div className="bg-rose-50 border border-rose-200 rounded-xl p-2.5 flex items-start gap-2 shadow-sm">
+                          <span className="text-rose-600 text-base">🚫</span>
                           <div className="flex-1">
-                            <h4 className="text-[10px] font-bold uppercase tracking-wider text-rose-800">Alergi Makanan</h4>
-                            <p className="text-xs font-black text-rose-700 mt-0.5">{alergiMakanan}</p>
+                            <h4 className="text-[9px] font-bold uppercase tracking-wider text-rose-800">Alergi Makanan</h4>
+                            <p className="text-[10px] font-black text-rose-700 mt-0.5 leading-tight">{alergiMakanan}</p>
                           </div>
                         </div>
                       )}
                       {alergiObat && (
-                        <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2.5 shadow-sm">
-                          <span className="text-red-600 text-lg">💊</span>
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-2.5 flex items-start gap-2 shadow-sm">
+                          <span className="text-red-600 text-base">💊</span>
                           <div className="flex-1">
-                            <h4 className="text-[10px] font-bold uppercase tracking-wider text-red-800">Alergi Obat</h4>
-                            <p className="text-xs font-black text-red-700 mt-0.5">{alergiObat}</p>
+                            <h4 className="text-[9px] font-bold uppercase tracking-wider text-red-800">Alergi Obat</h4>
+                            <p className="text-[10px] font-black text-red-700 mt-0.5 leading-tight">{alergiObat}</p>
+                          </div>
+                        </div>
+                      )}
+                      {obatDikonsumsi && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 flex items-start gap-2 shadow-sm">
+                          <span className="text-amber-600 text-base">💊</span>
+                          <div className="flex-1">
+                            <h4 className="text-[9px] font-bold uppercase tracking-wider text-amber-800">Obat Sedang Dikonsumsi</h4>
+                            <p className="text-[10px] font-black text-amber-700 mt-0.5 leading-tight">{obatDikonsumsi}</p>
+                          </div>
+                        </div>
+                      )}
+                      {riwayatPenyakit && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-2.5 flex items-start gap-2 shadow-sm">
+                          <span className="text-blue-600 text-base">🩺</span>
+                          <div className="flex-1">
+                            <h4 className="text-[9px] font-bold uppercase tracking-wider text-blue-800">Riwayat Penyakit</h4>
+                            <p className="text-[10px] font-black text-blue-700 mt-0.5 leading-tight">{riwayatPenyakit}</p>
                           </div>
                         </div>
                       )}
@@ -1117,7 +1221,7 @@ export default function NurseStationDashboard() {
 
               {/* TIMELINE RIWAYAT KUNJUNGAN */}
               <div className="flex-1 flex flex-col overflow-hidden">
-                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-3">5 Kunjungan Terakhir</span>
+                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-3 shrink-0">5 Kunjungan Terakhir</span>
                 
                 {loadingHistory ? (
                   <div className="text-center py-12 flex-1 flex flex-col justify-center items-center">
@@ -1155,19 +1259,31 @@ export default function NurseStationDashboard() {
                             {/* Vital Signs (TTV) */}
                             {assessment ? (
                               <div className="space-y-1.5 border-t border-slate-100 pt-2">
-                                <div className="grid grid-cols-2 gap-2 text-[10px] font-medium text-slate-600">
+                                <div className="grid grid-cols-2 gap-2 text-[10px] font-medium text-slate-650">
                                   <div className="flex items-center gap-1">
-                                    <span className="text-xs">🩺</span>
-                                    <span>Tensi: <strong className="font-mono text-slate-900">{assessment.sistole}/{assessment.diastole}</strong> <span className="text-[8px] text-slate-400">mmHg</span></span>
+                                    <span className="text-[10px]">🩺</span>
+                                    <span className="truncate">Tensi: <strong className="font-mono text-slate-900">{assessment.sistole}/{assessment.diastole}</strong></span>
                                   </div>
                                   <div className="flex items-center gap-1">
-                                    <span className="text-xs">🌡️</span>
-                                    <span>Suhu: <strong className="font-mono text-slate-900">{assessment.suhu_tubuh}</strong> <span className="text-[8px] text-slate-400">°C</span></span>
+                                    <span className="text-[10px]">🌡️</span>
+                                    <span>Suhu: <strong className="font-mono text-slate-900">{assessment.suhu_tubuh}</strong>°C</span>
                                   </div>
                                   <div className="flex items-center gap-1">
-                                    <span className="text-xs">⚖️</span>
-                                    <span>Berat: <strong className="font-mono text-slate-900">{assessment.berat_badan}</strong> <span className="text-[8px] text-slate-400">kg</span></span>
+                                    <span className="text-[10px]">⚖️</span>
+                                    <span>Berat: <strong className="font-mono text-slate-900">{assessment.berat_badan}</strong>kg</span>
                                   </div>
+                                  {assessment.skala_nyeri !== null && assessment.skala_nyeri !== undefined && (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-[10px]">💥</span>
+                                      <span>Nyeri: <strong className="font-mono text-slate-900">{assessment.skala_nyeri}</strong>/10</span>
+                                    </div>
+                                  )}
+                                  {assessment.skala_risiko_jatuh !== null && assessment.skala_risiko_jatuh !== undefined && (
+                                    <div className="col-span-2 flex items-center gap-1">
+                                      <span className="text-[10px]">⚠️</span>
+                                      <span className="truncate">Jatuh: <strong className="font-mono text-slate-900">{assessment.skala_risiko_jatuh}</strong> <span className="text-[9px] font-semibold text-slate-500">({assessment.tingkat_risiko_jatuh})</span></span>
+                                    </div>
+                                  )}
                                 </div>
 
                                 {/* Complaints (Keluhan) */}
@@ -1178,17 +1294,33 @@ export default function NurseStationDashboard() {
                                   </div>
                                 )}
 
+                                {/* Medications consumed */}
+                                {assessment.obat_dikonsumsi && (
+                                  <div className="bg-white p-2 rounded-lg border border-slate-200/50 text-[10px] leading-relaxed text-slate-700">
+                                    <span className="font-black block text-[8px] text-amber-500 uppercase tracking-widest mb-0.5">Obat Dikonsumsi</span>
+                                    <p>💊 {assessment.obat_dikonsumsi}</p>
+                                  </div>
+                                )}
+
+                                {/* Previous disease history */}
+                                {assessment.riwayat_penyakit && (
+                                  <div className="bg-white p-2 rounded-lg border border-slate-200/50 text-[10px] leading-relaxed text-slate-700">
+                                    <span className="font-black block text-[8px] text-blue-500 uppercase tracking-widest mb-0.5">Riwayat Penyakit</span>
+                                    <p>🩺 {assessment.riwayat_penyakit}</p>
+                                  </div>
+                                )}
+
                                 {/* Allergy Records in this visit */}
                                 {(assessment.alergi_makanan || assessment.alergi_obat) && (
-                                  <div className="flex flex-wrap gap-1 mt-1">
+                                  <div className="flex flex-wrap gap-1 mt-1 pt-1 border-t border-slate-100/50">
                                     {assessment.alergi_makanan && (
                                       <span className="bg-rose-50 text-rose-600 text-[8px] font-bold px-1.5 py-0.5 rounded border border-rose-100/50 shrink-0">
-                                        🚫 Alergi Mkn: {assessment.alergi_makanan}
+                                        🚫 Mkn: {assessment.alergi_makanan}
                                       </span>
                                     )}
                                     {assessment.alergi_obat && (
                                       <span className="bg-red-50 text-red-600 text-[8px] font-bold px-1.5 py-0.5 rounded border border-red-100/50 shrink-0">
-                                        💊 Alergi Obat: {assessment.alergi_obat}
+                                        💊 Obat: {assessment.alergi_obat}
                                       </span>
                                     )}
                                   </div>

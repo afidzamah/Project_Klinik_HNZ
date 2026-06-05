@@ -213,7 +213,7 @@ export default function KasirPage() {
               onClick={() => setFilterStatus('BELUM_BAYAR')}
               className={`px-4 py-2 rounded-lg transition-all cursor-pointer ${
                 filterStatus === 'BELUM_BAYAR'
-                  ? 'bg-gradient-to-r from-red-650 to-rose-600 text-white shadow-xs'
+                  ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-xs'
                   : 'text-slate-500'
               }`}
             >
@@ -223,7 +223,7 @@ export default function KasirPage() {
               onClick={() => setFilterStatus('Lunas')}
               className={`px-4 py-2 rounded-lg transition-all cursor-pointer ${
                 filterStatus === 'Lunas'
-                  ? 'bg-gradient-to-r from-red-650 to-rose-600 text-white shadow-xs'
+                  ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-xs'
                   : 'text-slate-500'
               }`}
             >
@@ -490,7 +490,7 @@ export default function KasirPage() {
                       )}
 
                       {/* SUMMARY NETTO BOX */}
-                      <div className="bg-gradient-to-br from-red-650 to-rose-600 text-white rounded-2xl p-4 shadow-lg shadow-red-150 flex items-center justify-between mt-2">
+                      <div className="bg-gradient-to-br from-red-600 to-red-700 text-white rounded-2xl p-4 shadow-lg shadow-red-150 flex items-center justify-between mt-2">
                         <div>
                           <span className="block text-[8px] font-black text-red-100 uppercase tracking-widest">Total Bayar Pasien (Netto)</span>
                           <span className="block text-[9px] text-red-200 font-semibold italic mt-0.5">Sudah termasuk potongan diskon</span>
@@ -504,7 +504,7 @@ export default function KasirPage() {
                       <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-650 to-rose-600 hover:from-red-750 hover:to-rose-750 text-white text-xs font-bold py-3.5 px-4 shadow-lg shadow-red-100 hover:shadow-red-200 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:brightness-110 text-white text-xs font-bold py-3.5 px-4 shadow-lg shadow-red-100 hover:shadow-red-200 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
                       >
                         {isSubmitting ? 'Memproses Transaksi...' : '💵 PROSES PEMBAYARAN & CETAK STRUK'}
                       </button>

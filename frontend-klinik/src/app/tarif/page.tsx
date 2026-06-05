@@ -428,14 +428,13 @@ export default function TarifPage() {
               Kelola master tindakan, kelas perawatan, komponen biaya, dan konfigurasikan tarif breakdown secara dinamis.
             </p>
           </div>
-          
-          {/* TAB BUTTONS (AESTHETIC CAPSULES) */}
+                  {/* TAB BUTTONS (AESTHETIC CAPSULES) */}
           <div className="bg-slate-100 p-1.5 rounded-2xl flex gap-1 self-start md:self-center shadow-inner border border-slate-200/50">
             <button
               onClick={() => setActiveTab('tindakan')}
               className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                 activeTab === 'tindakan'
-                  ? 'bg-gradient-to-r from-red-650 to-rose-600 text-white shadow-md'
+                  ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-md shadow-red-500/10'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -445,7 +444,7 @@ export default function TarifPage() {
               onClick={() => setActiveTab('master_opsi')}
               className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                 activeTab === 'master_opsi'
-                  ? 'bg-gradient-to-r from-red-650 to-rose-600 text-white shadow-md'
+                  ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-md shadow-red-500/10'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -455,7 +454,7 @@ export default function TarifPage() {
               onClick={() => setActiveTab('harga')}
               className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                 activeTab === 'harga'
-                  ? 'bg-gradient-to-r from-red-650 to-rose-600 text-white shadow-md'
+                  ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-md shadow-red-500/10'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -554,7 +553,7 @@ export default function TarifPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-650 to-rose-600 hover:from-red-750 hover:to-rose-750 text-white text-xs font-bold py-3.5 px-4 shadow-lg shadow-red-100 hover:shadow-red-200 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:brightness-110 text-white text-xs font-bold py-3.5 px-4 shadow-lg shadow-red-100 hover:shadow-red-200 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
                   >
                     {isSubmitting ? 'Menyimpan...' : '💾 Simpan Tindakan'}
                   </button>
@@ -669,7 +668,7 @@ export default function TarifPage() {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="rounded-xl bg-gradient-to-r from-red-650 to-rose-600 hover:from-red-750 hover:to-rose-750 text-white text-[11px] font-black py-2.5 px-4 shadow shadow-red-150 transition-all cursor-pointer shrink-0 disabled:opacity-50"
+                      className="rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:brightness-110 text-white text-[11px] font-black py-2.5 px-4 shadow shadow-red-150 transition-all cursor-pointer shrink-0 disabled:opacity-50"
                     >
                       ➕ Tambah
                     </button>
@@ -729,7 +728,7 @@ export default function TarifPage() {
                       <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="rounded-xl bg-gradient-to-r from-red-650 to-rose-600 hover:from-red-750 hover:to-rose-750 text-white text-[11px] font-black py-2.5 px-5 shadow shadow-red-150 transition-all cursor-pointer disabled:opacity-50"
+                        className="rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:brightness-110 text-white text-[11px] font-black py-2.5 px-5 shadow shadow-red-150 transition-all cursor-pointer disabled:opacity-50"
                       >
                         ➕ Tambah Komponen
                       </button>
@@ -861,7 +860,7 @@ export default function TarifPage() {
                     </div>
 
                     {/* ACCUMULATED TOTAL DISPLAY */}
-                    <div className="bg-gradient-to-br from-red-650 to-rose-600 text-white rounded-2xl p-4 shadow-lg shadow-red-150 flex items-center justify-between">
+                    <div className="bg-gradient-to-br from-red-600 to-red-700 text-white rounded-2xl p-4 shadow-lg shadow-red-150 flex items-center justify-between">
                       <div>
                         <span className="block text-[9px] font-black text-red-100 uppercase tracking-widest">Total Akumulasi Tarif</span>
                         <span className="block text-[10px] text-red-200 font-semibold italic mt-0.5">Dihitung otomatis (real-time)</span>
@@ -876,7 +875,7 @@ export default function TarifPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting || listKomponen.length === 0}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-650 to-rose-600 hover:from-red-750 hover:to-rose-750 text-white text-xs font-bold py-3.5 px-4 shadow-lg shadow-red-100 hover:shadow-red-200 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:brightness-110 text-white text-xs font-bold py-3.5 px-4 shadow-lg shadow-red-100 hover:shadow-red-200 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
                   >
                     {isSubmitting ? 'Menyimpan...' : '💾 Simpan & Rincikan Tarif'}
                   </button>

@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { json, urlencoded } from 'express';
 
 import * as dotenv from 'dotenv';
 
@@ -9,6 +10,11 @@ dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  
+  // Mengatur batas ukuran request payload agar perawat dapat mengunggah dokumen lab yang besar
+  app.use(json({ limit: '50mb' }));
+  app.use(urlencoded({ limit: '50mb', extended: true }));
+
   // TAMBAHKAN BARIS INI: Mengizinkan Next.js mengirim data ke NestJS
   app.enableCors();
 

@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farmasi — Verifikasi Resep</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F2F1EE;
+  --surface: #FFFFFF;
+  --surface2: #F7F6F3;
+  --border: #E4E2DA;
+  --border2: #CCCABC;
+  --text: #1C1B18;
+  --text2: #5A5849;
+  --text3: #9A9788;
+  --accent: #0F4C35;
+  --accent-light: #E8F5EE;
+  --accent-border: #A8D5B5;
+  --warn: #7C4D00;
+  --warn-bg: #FFF8EC;
+  --warn-border: #F0C878;
+  --danger: #7C1A1A;
+  --danger-bg: #FFF0F0;
+  --danger-border: #F0A8A8;
+  --info: #1A3A6B;
+  --info-bg: #EEF3FB;
+  --info-border: #A8C0E8;
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 13px; min-height: 100vh; }
+
+/* TOPBAR */
+.topbar {
+  background: var(--accent);
+  height: 44px; display: flex; align-items: center;
+  padding: 0 16px; gap: 12px;
+}
+.tb-logo { font-size: 12px; font-weight: 500; color: #9FD4AE; }
+.tb-sep { width: 0.5px; height: 16px; background: #1A6B4A; }
+.tb-role { font-size: 11.5px; font-weight: 500; color: #E8F5EE; }
+.tb-sp { flex: 1; }
+.tb-stat { display: flex; gap: 6px; }
+.tb-chip { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+.tc-warn   { background: rgba(240,200,120,.2); color: #F5C842; border: 0.5px solid rgba(240,200,120,.3); }
+.tc-queue  { background: rgba(120,180,240,.15); color: #9FD4AE; border: 0.5px solid rgba(120,180,240,.2); }
+.tc-done   { background: rgba(100,220,150,.15); color: #9FD4AE; border: 0.5px solid rgba(100,220,150,.2); }
+.tb-notif { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; position: relative; }
+.notif-dot { position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: #F5C842; border: 1.5px solid var(--accent); }
+
+/* LAYOUT */
+.layout { display: flex; height: calc(100vh - 44px); }
+
+/* SIDEBAR */
+.sidebar {
+  width: 260px; flex-shrink: 0;
+  background: var(--surface);
+  border-right: 0.5px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-hdr {
+  padding: 10px 13px;
+  border-bottom: 0.5px solid var(--border);
+  background: var(--surface2);
+}
+.sh-title { font-size: 12px; font-weight: 500; margin-bottom: 6px; }
+.sh-search { position: relative; }
+.sh-search input {
+  width: 100%; height: 30px;
+  font-family: var(--sans); font-size: 12px;
+  background: var(--bg); border: 0.5px solid var(--border2);
+  border-radius: 6px; padding: 0 9px 0 28px; outline: none; color: var(--text);
+}
+.sh-search input:focus { border-color: var(--accent); background: #fff; }
+.sh-search-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text3); }
+.sidebar-filters { display: flex; gap: 4px; padding: 8px 13px; border-bottom: 0.5px solid var(--border); flex-wrap: wrap; }
+.sf-chip { font-size: 10.5px; padding: 3px 9px; border-radius: 20px; border: 0.5px solid var(--border2); background: var(--surface2); color: var(--text2); cursor: pointer; font-weight: 500; transition: all .12s; }
+.sf-chip:hover { background: var(--border); }
+.sf-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.queue-list { flex: 1; overflow-y: auto; }
+
+/* QUEUE ITEM */
+.queue-item {
+  padding: 10px 13px;
+  border-bottom: 0.5px solid var(--border);
+  cursor: pointer;
+  transition: background .12s;
+  position: relative;
+}
+.queue-item:hover { background: var(--surface2); }
+.queue-item.active { background: var(--accent-light); border-left: 3px solid var(--accent); }
+.queue-item.active .qi-name { color: var(--accent); }
+.qi-top { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.qi-num { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+.qi-name { font-size: 12.5px; font-weight: 500; flex: 1; }
+.qi-time { font-size: 10.5px; color: var(--text3); }
+.qi-meta { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+.qi-flags { display: flex; gap: 4px; flex-wrap: wrap; }
+.qi-flag { font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 500; white-space: nowrap; }
+.qf-danger { background: var(--danger-bg); color: var(--danger); border: 0.5px solid var(--danger-border); }
+.qf-warn   { background: var(--warn-bg); color: var(--warn); border: 0.5px solid var(--warn-border); }
+.qf-ok     { background: var(--accent-light); color: var(--accent); border: 0.5px solid var(--accent-border); }
+.qf-info   { background: var(--info-bg); color: var(--info); border: 0.5px solid var(--info-border); }
+.qi-status { position: absolute; right: 10px; top: 10px; width: 7px; height: 7px; border-radius: 50%; }
+.qs-pending { background: #F59E0B; }
+.qs-warn    { background: #EF4444; }
+.qs-done    { background: #22C55E; }
+
+/* MAIN CONTENT */
+.main { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+/* RESEP HEADER */
+.rx-header-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.rxh-top {
+  background: #1C1B18;
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 12px;
+}
+.rxh-pt-av { width: 32px; height: 32px; border-radius: 50%; background: #2E3A52; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: #7BC0F7; flex-shrink: 0; }
+.rxh-pt-name { font-size: 13px; font-weight: 500; color: #E8E6DF; }
+.rxh-pt-meta { font-size: 10.5px; color: #5A5A52; margin-top: 1px; }
+.rxh-sp { flex: 1; }
+.rxh-allergy { display: flex; align-items: center; gap: 5px; background: #3A1F1F; border: 0.5px solid #7A2020; border-radius: 20px; padding: 3px 10px; font-size: 11px; color: #F7C1C1; }
+.rxh-meta-row { padding: 8px 14px; border-bottom: 0.5px solid var(--border); display: flex; gap: 20px; background: var(--surface2); }
+.rxh-meta-item { display: flex; flex-direction: column; gap: 1px; }
+.rxh-meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); font-weight: 500; }
+.rxh-meta-val { font-size: 12px; font-weight: 500; color: var(--text); }
+
+/* MAPPING TABLE */
+.mapping-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.mc-hdr { padding: 9px 14px; background: var(--surface2); border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.mc-title { font-size: 12.5px; font-weight: 500; }
+.mc-legend { display: flex; gap: 8px; align-items: center; }
+.mc-leg-item { display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--text3); }
+.mc-leg-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+.map-table { width: 100%; border-collapse: collapse; }
+.map-table th {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--text3); font-weight: 500;
+  background: var(--surface2);
+  padding: 7px 12px; border-bottom: 0.5px solid var(--border);
+  text-align: left; white-space: nowrap;
+}
+.map-table td { padding: 0; border-bottom: 0.5px solid #F5F4F0; vertical-align: middle; }
+.map-table tr:last-child td { border-bottom: none; }
+.map-table tr.row-danger { background: var(--danger-bg); }
+.map-table tr.row-warn   { background: var(--warn-bg); }
+.map-table tr.row-ok     { background: #fff; }
+.map-table tr:hover td   { filter: brightness(.97); }
+
+/* TABLE CELLS */
+.tc { padding: 9px 12px; }
+.tc-no { width: 36px; text-align: center; }
+.row-num { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; }
+.rn-ok     { background: var(--accent-light); color: var(--accent); }
+.rn-warn   { background: var(--warn-bg); color: var(--warn); }
+.rn-danger { background: var(--danger-bg); color: var(--danger); }
+
+/* RESEP INFO */
+.resep-info { display: flex; flex-direction: column; gap: 2px; }
+.ri-name { font-size: 12.5px; font-weight: 500; color: var(--text); }
+.ri-detail { font-size: 11px; color: var(--text2); }
+.ri-dokter-note { font-size: 11px; color: var(--info); font-style: italic; margin-top: 2px; }
+
+/* MAPPING RESULT */
+.map-result { display: flex; flex-direction: column; gap: 3px; }
+.mr-main { display: flex; align-items: center; gap: 6px; }
+.mr-produk { font-size: 12px; font-weight: 500; color: var(--text); }
+.mr-badge { font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 500; }
+.mrb-generik { background: var(--accent-light); color: var(--accent); border: 0.5px solid var(--accent-border); }
+.mrb-paten   { background: var(--info-bg); color: var(--info); border: 0.5px solid var(--info-border); }
+.mrb-bpjs    { background: var(--warn-bg); color: var(--warn); border: 0.5px solid var(--warn-border); }
+.mrb-nonform { background: var(--danger-bg); color: var(--danger); border: 0.5px solid var(--danger-border); }
+.mr-stock { font-size: 11px; color: var(--text3); }
+.mr-stock.ok { color: var(--accent); }
+.mr-stock.low { color: var(--warn); }
+
+/* ALTERNATIF */
+.alt-wrap { display: flex; flex-direction: column; gap: 3px; }
+.alt-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text3); cursor: pointer; padding: 2px 0; }
+.alt-item:hover .alt-name { color: var(--info); text-decoration: underline; }
+.alt-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--border2); flex-shrink: 0; }
+.alt-name { }
+
+/* FLAG CELL */
+.flag-wrap { display: flex; flex-direction: column; gap: 3px; }
+.flag-item { display: flex; align-items: flex-start; gap: 5px; }
+.flag-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.fd-danger { background: #EF4444; }
+.fd-warn   { background: #F59E0B; }
+.fd-ok     { background: #22C55E; }
+.flag-text { font-size: 11px; color: var(--text2); line-height: 1.35; }
+
+/* ACTION CELL */
+.action-btns { display: flex; gap: 4px; align-items: center; }
+.act-btn { font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 5px; cursor: pointer; font-family: var(--sans); white-space: nowrap; transition: all .12s; border: none; }
+.ab-ok      { background: var(--accent); color: #fff; }
+.ab-ok:hover { opacity: .85; }
+.ab-change  { background: transparent; border: 0.5px solid var(--border2) !important; color: var(--text2); }
+.ab-change:hover { background: var(--surface2); }
+.ab-return  { background: var(--danger-bg); color: var(--danger); }
+.ab-return:hover { opacity: .85; }
+.ab-hold    { background: var(--warn-bg); color: var(--warn); }
+
+/* RETURN TO DOKTER PANEL */
+.return-panel {
+  display: none;
+  background: var(--danger-bg);
+  border: 0.5px solid var(--danger-border);
+  border-radius: 8px;
+  padding: 10px 13px;
+  margin-top: 6px;
+}
+.return-panel.show { display: block; }
+.rp-title { font-size: 11.5px; font-weight: 500; color: var(--danger); margin-bottom: 6px; }
+.rp-reasons { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.rp-reason { font-size: 11px; padding: 3px 9px; border-radius: 20px; border: 0.5px solid var(--danger-border); background: #fff; color: var(--danger); cursor: pointer; }
+.rp-reason.sel { background: var(--danger); color: #fff; }
+.rp-note { width: 100%; font-family: var(--sans); font-size: 12px; background: #fff; border: 0.5px solid var(--danger-border); border-radius: 6px; padding: 6px 9px; outline: none; resize: vertical; min-height: 52px; color: var(--text); }
+.rp-note:focus { border-color: var(--danger); }
+.rp-send { margin-top: 7px; font-size: 12px; font-weight: 500; padding: 5px 14px; border-radius: 6px; background: var(--danger); color: #fff; border: none; cursor: pointer; font-family: var(--sans); }
+
+/* SUMMARY BAR */
+.summary-bar {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 14px;
+}
+.sb-item { display: flex; flex-direction: column; gap: 1px; }
+.sb-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); font-weight: 500; }
+.sb-val { font-size: 16px; font-weight: 500; color: var(--text); }
+.sb-val.danger { color: var(--danger); }
+.sb-val.warn   { color: var(--warn); }
+.sb-val.ok     { color: var(--accent); }
+.sb-sep { width: 0.5px; height: 32px; background: var(--border); }
+.sb-sp { flex: 1; }
+.sb-approve { font-size: 12.5px; font-weight: 500; padding: 8px 20px; border-radius: 7px; background: var(--accent); color: #fff; border: none; cursor: pointer; font-family: var(--sans); display: flex; align-items: center; gap: 6px; }
+.sb-approve:hover { opacity: .9; }
+.sb-approve:disabled { opacity: .4; cursor: not-allowed; }
+.sb-draft { font-size: 12px; font-weight: 500; padding: 8px 14px; border-radius: 7px; background: transparent; border: 0.5px solid var(--border2); color: var(--text2); cursor: pointer; font-family: var(--sans); }
+
+/* CHANGE MODAL */
+.change-modal {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,.35); z-index: 100;
+  align-items: center; justify-content: center;
+}
+.change-modal.show { display: flex; }
+.modal-card {
+  background: var(--surface);
+  border-radius: 12px;
+  width: 480px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,.16);
+}
+.modal-hdr { padding: 12px 16px; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.modal-title { font-size: 13.5px; font-weight: 500; }
+.modal-close { font-size: 18px; color: var(--text3); cursor: pointer; }
+.modal-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.modal-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; color: var(--text3); margin-bottom: 4px; }
+.alt-option { display: flex; align-items: center; gap: 10px; padding: 9px 11px; border: 0.5px solid var(--border); border-radius: 8px; cursor: pointer; transition: all .12s; }
+.alt-option:hover { background: var(--surface2); }
+.alt-option.selected { border-color: var(--accent); background: var(--accent-light); }
+.ao-radio { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--border2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.alt-option.selected .ao-radio { border-color: var(--accent); background: var(--accent); }
+.ao-dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; display: none; }
+.alt-option.selected .ao-dot { display: block; }
+.ao-info { flex: 1; }
+.ao-name { font-size: 12.5px; font-weight: 500; }
+.ao-detail { font-size: 11px; color: var(--text2); margin-top: 1px; }
+.ao-badges { display: flex; gap: 4px; margin-top: 3px; }
+.modal-reason { width: 100%; font-family: var(--sans); font-size: 12px; background: var(--surface2); border: 0.5px solid var(--border2); border-radius: 6px; padding: 7px 10px; outline: none; resize: none; min-height: 52px; color: var(--text); }
+.modal-reason:focus { border-color: var(--accent); background: #fff; }
+.modal-footer { padding: 10px 16px; border-top: 0.5px solid var(--border); display: flex; justify-content: flex-end; gap: 7px; }
+.mf-cancel { font-size: 12px; padding: 6px 14px; border-radius: 6px; border: 0.5px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; font-family: var(--sans); }
+.mf-save { font-size: 12px; padding: 6px 14px; border-radius: 6px; background: var(--accent); color: #fff; border: none; cursor: pointer; font-family: var(--sans); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <span class="tb-logo">Brawijaya Hospital</span>
+  <div class="tb-sep"></div>
+  <span class="tb-role">Instalasi Farmasi · Poli Rawat Jalan</span>
+  <div class="tb-sp"></div>
+  <div class="tb-stat">
+    <span class="tb-chip tc-warn">3 perlu verifikasi</span>
+    <span class="tb-chip tc-queue">8 antrian</span>
+    <span class="tb-chip tc-done">14 selesai hari ini</span>
+  </div>
+  <div class="tb-notif">🔔<div class="notif-dot"></div></div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR: QUEUE -->
+  <div class="sidebar">
+    <div class="sidebar-hdr">
+      <div class="sh-title">Antrian Resep Masuk</div>
+      <div class="sh-search">
+        <span class="sh-search-icon">⌕</span>
+        <input type="text" placeholder="Cari nama pasien / dokter...">
+      </div>
+    </div>
+    <div class="sidebar-filters">
+      <div class="sf-chip active" onclick="filterQueue('semua',this)">Semua</div>
+      <div class="sf-chip" onclick="filterQueue('perlu',this)">Perlu Verif</div>
+      <div class="sf-chip" onclick="filterQueue('pending',this)">Pending</div>
+      <div class="sf-chip" onclick="filterQueue('done',this)">Selesai</div>
+    </div>
+    <div class="queue-list" id="queue-list">
+
+      <div class="queue-item active" onclick="loadResep(0)">
+        <div class="qi-status qs-warn"></div>
+        <div class="qi-top">
+          <span class="qi-num">#003</span>
+          <span class="qi-name">Siti Aminah</span>
+          <span class="qi-time">10:48</span>
+        </div>
+        <div class="qi-meta">dr. Raka · Poli Interna · BPJS · 4 obat</div>
+        <div class="qi-flags">
+          <span class="qi-flag qf-danger">Interaksi obat</span>
+          <span class="qi-flag qf-warn">Non-FORNAS</span>
+        </div>
+      </div>
+
+      <div class="queue-item" onclick="loadResep(1)">
+        <div class="qi-status qs-warn"></div>
+        <div class="qi-top">
+          <span class="qi-num">#007</span>
+          <span class="qi-name">Budi Santoso</span>
+          <span class="qi-time">11:02</span>
+        </div>
+        <div class="qi-meta">dr. Sari · Poli Umum · Umum · 2 obat</div>
+        <div class="qi-flags">
+          <span class="qi-flag qf-warn">Stok terbatas</span>
+        </div>
+      </div>
+
+      <div class="queue-item" onclick="loadResep(2)">
+        <div class="qi-status qs-pending"></div>
+        <div class="qi-top">
+          <span class="qi-num">#011</span>
+          <span class="qi-name">Ahmad Fauzi</span>
+          <span class="qi-time">11:15</span>
+        </div>
+        <div class="qi-meta">dr. Raka · Poli Interna · BPJS · 3 obat</div>
+        <div class="qi-flags">
+          <span class="qi-flag qf-ok">Mapped otomatis</span>
+        </div>
+      </div>
+
+      <div class="queue-item" onclick="loadResep(3)">
+        <div class="qi-status qs-pending"></div>
+        <div class="qi-top">
+          <span class="qi-num">#014</span>
+          <span class="qi-name">Dewi Rahayu</span>
+          <span class="qi-time">11:28</span>
+        </div>
+        <div class="qi-meta">dr. Hendra · Poli Anak · BPJS · 2 obat</div>
+        <div class="qi-flags">
+          <span class="qi-flag qf-ok">Mapped otomatis</span>
+        </div>
+      </div>
+
+      <div class="queue-item" onclick="loadResep(4)">
+        <div class="qi-status qs-pending"></div>
+        <div class="qi-top">
+          <span class="qi-num">#018</span>
+          <span class="qi-name">Rudi Hermawan</span>
+          <span class="qi-time">11:41</span>
+        </div>
+        <div class="qi-meta">dr. Sari · Poli Umum · BPJS · 1 obat</div>
+        <div class="qi-flags">
+          <span class="qi-flag qf-info">Tidak boleh diganti</span>
+        </div>
+      </div>
+
+      <div class="queue-item" style="opacity:.5">
+        <div class="qi-status qs-done"></div>
+        <div class="qi-top">
+          <span class="qi-num">#001</span>
+          <span class="qi-name">Rina Wati</span>
+          <span class="qi-time">09:12</span>
+        </div>
+        <div class="qi-meta">dr. Raka · BPJS · 3 obat</div>
+        <div class="qi-flags">
+          <span class="qi-flag qf-ok">✓ Selesai</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- PATIENT HEADER -->
+    <div class="rx-header-card">
+      <div class="rxh-top">
+        <div class="rxh-pt-av">SA</div>
+        <div>
+          <div class="rxh-pt-name">Siti Aminah</div>
+          <div class="rxh-pt-meta">F · 45th · No. Reg 26052500003</div>
+        </div>
+        <div class="rxh-sp"></div>
+        <div class="rxh-allergy">⚠ Alergi: Penisilin</div>
+      </div>
+      <div class="rxh-meta-row">
+        <div class="rxh-meta-item"><div class="rxh-meta-label">Dokter</div><div class="rxh-meta-val">dr. Raka Pratama</div></div>
+        <div class="rxh-meta-item"><div class="rxh-meta-label">Poli</div><div class="rxh-meta-val">Interna</div></div>
+        <div class="rxh-meta-item"><div class="rxh-meta-label">Jaminan</div><div class="rxh-meta-val">BPJS</div></div>
+        <div class="rxh-meta-item"><div class="rxh-meta-label">Masuk resep</div><div class="rxh-meta-val">26 Mei 2026 · 10:48</div></div>
+        <div class="rxh-meta-item"><div class="rxh-meta-label">Status mapping</div><div class="rxh-meta-val" style="color:var(--warn)">⚠ Perlu verifikasi</div></div>
+      </div>
+    </div>
+
+    <!-- MAPPING TABLE -->
+    <div class="mapping-card">
+      <div class="mc-hdr">
+        <span class="mc-title">Hasil auto-mapping — 4 obat</span>
+        <div class="mc-legend">
+          <div class="mc-leg-item"><div class="mc-leg-dot" style="background:#22C55E"></div>OK</div>
+          <div class="mc-leg-item"><div class="mc-leg-dot" style="background:#F59E0B"></div>Perlu cek</div>
+          <div class="mc-leg-item"><div class="mc-leg-dot" style="background:#EF4444"></div>Perlu tindakan</div>
+        </div>
+      </div>
+      <table class="map-table">
+        <thead>
+          <tr>
+            <th style="width:36px">#</th>
+            <th style="width:190px">Resep dokter</th>
+            <th style="width:220px">Produk mapped</th>
+            <th style="width:170px">Alternatif tersedia</th>
+            <th style="width:170px">Flag & peringatan</th>
+            <th>Aksi farmasi</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- ROW 1: OK -->
+          <tr class="row-ok">
+            <td class="tc tc-no"><div class="row-num rn-ok">1</div></td>
+            <td class="tc">
+              <div class="resep-info">
+                <div class="ri-name">Amlodipine 10mg</div>
+                <div class="ri-detail">oral · 1x1 · 30 hari · 30 tablet</div>
+                <div class="ri-dokter-note">"Naik dosis dari 5mg"</div>
+              </div>
+            </td>
+            <td class="tc">
+              <div class="map-result">
+                <div class="mr-main">
+                  <span class="mr-produk">Amlodipine 10mg — Generik</span>
+                  <span class="mr-badge mrb-bpjs">BPJS</span>
+                </div>
+                <div class="mr-stock ok">✓ Stok: 284 tablet</div>
+              </div>
+            </td>
+            <td class="tc">
+              <div class="alt-wrap">
+                <div class="alt-item"><div class="alt-dot"></div><span class="alt-name">Amlodipine 10mg — Kimfa</span></div>
+                <div class="alt-item"><div class="alt-dot"></div><span class="alt-name">Norvasc 10mg — Pfizer</span></div>
+              </div>
+            </td>
+            <td class="tc">
+              <div class="flag-wrap">
+                <div class="flag-item"><div class="flag-dot fd-ok"></div><span class="flag-text">Aman — tidak ada interaksi bermakna</span></div>
+              </div>
+            </td>
+            <td class="tc">
+              <div class="action-btns">
+                <button class="act-btn ab-ok" onclick="approveRow(this)">✓ Setuju</button>
+                <button class="act-btn ab-change" onclick="openChangeModal(1,'Amlodipine 10mg')">Ganti</button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- ROW 2: WARN — interaksi -->
+          <tr class="row-warn">
+            <td class="tc tc-no"><div class="row-num rn-warn">2</div></td>
+            <td class="tc">
+              <div class="resep-info">
+                <div class="ri-name">Captopril 12.5mg</div>
+                <div class="ri-detail">oral · 2x1 · 30 hari · 60 tablet</div>
+                <div class="ri-dokter-note">"Tambah untuk HT tidak terkontrol"</div>
+              </div>
+            </td>
+            <td class="tc">
+              <div class="map-result">
+                <div class="mr-main">
+                  <span class="mr-produk">Captopril 12.5mg — Generik</span>
+                  <span class="mr-badge mrb-bpjs">BPJS</span>
+                </div>
+                <div class="mr-stock ok">✓ Stok: 156 tablet</div>
+              </div>
+            </td>
+            <td class="tc">
+              <div class="alt-wrap">
+                <div class="alt-item"><div class="alt-dot"></div><span class="alt-name">Captopril 12.5mg — Dexa</span></div>
+              </div>
+            </td>
+            <td class="tc">
+              <div class="flag-wrap">
+                <div class="flag-item"><div class="flag-dot fd-warn"></div><span class="flag-text"><strong>Kombinasi antihipertensi</strong> — pantau TD ketat, risiko hipotensi dengan Amlodipine</span></div>
+                <div class="flag-item"><div class="flag-dot fd-warn"></div><span class="flag-text">Pantau kadar kalium — ACE inhibitor dapat tingkatkan K+</span></div>
+              </div>
+            </td>
+            <td class="tc">
+              <div class="action-btns">
+                <button class="act-btn ab-ok" onclick="approveRow(this)">✓ Setuju</button>
+                <button class="act-btn ab-change" onclick="openChangeModal(2,'Captopril 12.5mg')">Ganti</button>
+              </div>
+              <div style="font-size:10px;color:var(--warn);margin-top:4px">Verifikasi diperlukan</div>
+            </td>
+          </tr>
+
+          <!-- ROW 3: OK -->
+          <tr class="row-ok">
+            <td class="tc tc-no"><div class="row-num rn-ok">3</div></td>
+            <td class="tc">
+              <div class="resep-info">
+                <div class="ri-name">Metformin 500mg</div>
+                <div class="ri-detail">oral · 2x1 · 30 hari · 60 tablet</div>
+                <div class="ri-dokter-note">"Lanjut dari resep sebelumnya"</div>
+              </div>
+            </td>
+            <td class="tc">
+              <div class="map-result">
+                <div class="mr-main">
+                  <span class="mr-produk">Metformin 500mg — Generik</span>
+                  <span class="mr-badge mrb-bpjs">BPJS</span>
+                </div>
+                <div class="mr-stock ok">✓ Stok: 512 tablet</div>
+              </div>
+            </td>
+            <td class="tc">
+              <div class="alt-wrap">
+                <div class="alt-item"><div class="alt-dot"></div><span class="alt-name">Glucophage 500mg — Merck</span></div>
+                <div class="alt-item"><div class="alt-dot"></div><span class="alt-name">Metformin 500mg — Kimfa</span></div>
+              </div>
+            </td>
+            <td class="tc">
+              <div class="flag-wrap">
+                <div class="flag-item"><div class="flag-dot fd-ok"></div><span class="flag-text">Aman — eGFR 74 masih dalam batas aman Metformin</span></div>
+              </div>
+            </td>
+            <td class="tc">
+              <div class="action-btns">
+                <button class="act-btn ab-ok" onclick="approveRow(this)">✓ Setuju</button>
+                <button class="act-btn ab-change" onclick="openChangeModal(3,'Metformin 500mg')">Ganti</button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- ROW 4: DANGER — non FORNAS -->
+          <tr class="row-warn">
+            <td class="tc tc-no"><div class="row-num rn-warn">4</div></td>
+            <td class="tc">
+              <div class="resep-info">
+                <div class="ri-name">Atorvastatin 20mg</div>
+                <div class="ri-detail">oral · 1x1 (malam) · 30 hari · 30 tablet</div>
+                <div class="ri-dokter-note">"Lanjut, kontrol LDL"</div>
+              </div>
+            </td>
+            <td class="tc">
+              <div class="map-result">
+                <div class="mr-main">
+                  <span class="mr-produk">Atorvastatin 20mg — Generik</span>
+                  <span class="mr-badge mrb-bpjs">BPJS</span>
+                </div>
+                <div class="mr-stock low">⚠ Stok: 38 tablet (terbatas)</div>
+              </div>
+            </td>
+            <td class="tc">
+              <div class="alt-wrap">
+                <div class="alt-item"><div class="alt-dot"></div><span class="alt-name">Lipitor 20mg — Pfizer</span></div>
+                <div class="alt-item"><div class="alt-dot"></div><span class="alt-name">Atorvastatin 20mg — Dexa</span></div>
+              </div>
+            </td>
+            <td class="tc">
+              <div class="flag-wrap">
+                <div class="flag-item"><div class="flag-dot fd-warn"></div><span class="flag-text"><strong>Stok hampir habis</strong> — sisa 38 tab, cukup untuk resep ini (30 tab) tapi mepet</span></div>
+                <div class="flag-item"><div class="flag-dot fd-warn"></div><span class="flag-text">Pertimbangkan reorder — stok di bawah minimum (50 tab)</span></div>
+              </div>
+            </td>
+            <td class="tc">
+              <div class="action-btns">
+                <button class="act-btn ab-ok" onclick="approveRow(this)">✓ Setuju</button>
+                <button class="act-btn ab-change" onclick="openChangeModal(4,'Atorvastatin 20mg')">Ganti</button>
+              </div>
+              <div style="font-size:10px;color:var(--warn);margin-top:4px">Trigger reorder otomatis</div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <!-- KEMBALIKAN KE DOKTER -->
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:11px 14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+        <span style="font-size:12.5px;font-weight:500">Kembalikan ke Dokter</span>
+        <button class="act-btn ab-return" onclick="toggleReturn()">Kirim catatan ke dokter</button>
+      </div>
+      <div style="font-size:11.5px;color:var(--text3)">Jika ada obat yang tidak bisa dipenuhi atau perlu konfirmasi klinis</div>
+      <div class="return-panel" id="return-panel">
+        <div class="rp-title">Pilih alasan kembalikan ke dokter:</div>
+        <div class="rp-reasons">
+          <div class="rp-reason" onclick="this.classList.toggle('sel')">Stok habis semua varian</div>
+          <div class="rp-reason" onclick="this.classList.toggle('sel')">Tidak masuk FORNAS BPJS</div>
+          <div class="rp-reason" onclick="this.classList.toggle('sel')">Perlu konfirmasi interaksi</div>
+          <div class="rp-reason" onclick="this.classList.toggle('sel')">Dosis di luar lazim</div>
+          <div class="rp-reason" onclick="this.classList.toggle('sel')">Obat tidak tersedia di RS</div>
+          <div class="rp-reason" onclick="this.classList.toggle('sel')">Perlu surat khusus BPJS</div>
+        </div>
+        <textarea class="rp-note" placeholder="Tambah catatan untuk dokter (opsional)..."></textarea>
+        <button class="rp-send" onclick="sendReturn()">Kirim ke dokter dr. Raka</button>
+      </div>
+    </div>
+
+    <!-- SUMMARY BAR -->
+    <div class="summary-bar">
+      <div class="sb-item"><div class="sb-label">Total obat</div><div class="sb-val">4</div></div>
+      <div class="sb-sep"></div>
+      <div class="sb-item"><div class="sb-label">Disetujui</div><div class="sb-val ok" id="count-ok">0</div></div>
+      <div class="sb-sep"></div>
+      <div class="sb-item"><div class="sb-label">Perlu cek</div><div class="sb-val warn">2</div></div>
+      <div class="sb-sep"></div>
+      <div class="sb-item"><div class="sb-label">Diblokir</div><div class="sb-val danger">0</div></div>
+      <div class="sb-sp"></div>
+      <button class="sb-draft">Simpan draft</button>
+      <button class="sb-approve" id="approve-all-btn" onclick="approveAll()">
+        Setujui Semua & Siapkan Obat →
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- CHANGE MODAL -->
+<div class="change-modal" id="change-modal">
+  <div class="modal-card">
+    <div class="modal-hdr">
+      <span class="modal-title" id="modal-title">Ganti Produk — Amlodipine 10mg</span>
+      <span class="modal-close" onclick="closeModal()">×</span>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="modal-label">Pilih produk pengganti</div>
+        <div style="display:flex;flex-direction:column;gap:5px" id="modal-options">
+
+          <div class="alt-option selected" onclick="selectAlt(this)">
+            <div class="ao-radio"><div class="ao-dot"></div></div>
+            <div class="ao-info">
+              <div class="ao-name">Amlodipine 10mg — Generik Kimfa</div>
+              <div class="ao-detail">Stok: 124 tablet · Exp: Des 2027</div>
+              <div class="ao-badges">
+                <span class="mr-badge mrb-bpjs">BPJS</span>
+                <span class="mr-badge mrb-generik">Generik</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="alt-option" onclick="selectAlt(this)">
+            <div class="ao-radio"><div class="ao-dot"></div></div>
+            <div class="ao-info">
+              <div class="ao-name">Norvasc 10mg — Pfizer</div>
+              <div class="ao-detail">Stok: 48 tablet · Exp: Mar 2027</div>
+              <div class="ao-badges">
+                <span class="mr-badge mrb-paten">Paten</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="alt-option" onclick="selectAlt(this)">
+            <div class="ao-radio"><div class="ao-dot"></div></div>
+            <div class="ao-info">
+              <div class="ao-name">Amlodipine 10mg — Dexa</div>
+              <div class="ao-detail">Stok: 200 tablet · Exp: Sep 2027</div>
+              <div class="ao-badges">
+                <span class="mr-badge mrb-bpjs">BPJS</span>
+                <span class="mr-badge mrb-generik">Generik</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div>
+        <div class="modal-label">Alasan penggantian (wajib dicatat)</div>
+        <textarea class="modal-reason" placeholder="Contoh: stok produk utama habis, diganti produk setara..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="mf-cancel" onclick="closeModal()">Batal</button>
+      <button class="mf-save" onclick="saveChange()">Simpan Penggantian</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var approvedCount = 0;
+var totalRows = 4;
+
+function approveRow(btn) {
+  var row = btn.closest('tr');
+  row.style.opacity = '.5';
+  var btns = row.querySelectorAll('.act-btn');
+  btns.forEach(function(b){ b.disabled = true; b.style.opacity = '.5'; });
+  btn.textContent = '✓ Disetujui';
+  btn.style.background = '#166534';
+  approvedCount++;
+  document.getElementById('count-ok').textContent = approvedCount;
+  if(approvedCount >= totalRows) {
+    document.getElementById('approve-all-btn').style.background = '#166534';
+  }
+}
+
+function approveAll() {
+  document.querySelectorAll('.map-table tbody tr').forEach(function(tr) {
+    var btn = tr.querySelector('.ab-ok');
+    if(btn && !btn.disabled) approveRow(btn);
+  });
+  setTimeout(function(){
+    alert('Resep disetujui!\n\nSemua 4 obat siap disiapkan.\nNotifikasi dikirim ke:\n• Pasien: nomor antrean pengambilan obat\n• Sistem stok: stok dikurangi otomatis\n• Log audit: tercatat dengan nama apoteker');
+  }, 200);
+}
+
+function toggleReturn() {
+  var panel = document.getElementById('return-panel');
+  panel.classList.toggle('show');
+}
+
+function sendReturn() {
+  alert('Catatan dikirim ke dr. Raka!\n\nDokter akan menerima notifikasi dan bisa merevisi resep dari EMR-nya.\nResep ini dipindahkan ke status "Menunggu revisi dokter".');
+  document.getElementById('return-panel').classList.remove('show');
+}
+
+function openChangeModal(rowNum, namaObat) {
+  document.getElementById('modal-title').textContent = 'Ganti Produk — ' + namaObat;
+  document.getElementById('change-modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('change-modal').classList.remove('show');
+}
+
+function selectAlt(el) {
+  document.querySelectorAll('.alt-option').forEach(function(o){ o.classList.remove('selected'); });
+  el.classList.add('selected');
+}
+
+function saveChange() {
+  var sel = document.querySelector('.alt-option.selected .ao-name');
+  var reason = document.querySelector('.modal-reason').value;
+  if(!reason) { alert('Alasan penggantian wajib diisi untuk audit trail.'); return; }
+  closeModal();
+  alert('Produk berhasil diganti ke:\n"' + (sel ? sel.textContent : '-') + '"\n\nAlasan tercatat di audit log.');
+}
+
+function filterQueue(type, el) {
+  document.querySelectorAll('.sf-chip').forEach(function(c){ c.classList.remove('active'); });
+  el.classList.add('active');
+}
+
+function loadResep(idx) {
+  document.querySelectorAll('.queue-item').forEach(function(q){ q.classList.remove('active'); });
+  event.currentTarget.classList.add('active');
+}
+</script>
+</body>
+</html>

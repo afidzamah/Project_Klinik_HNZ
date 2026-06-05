@@ -14,6 +14,26 @@ export class PemeriksaanDokterService {
     this.ai = new GoogleGenAI({ apiKey: cleanApiKey });
   }
 
+  private async generateContentWithFallback(options: { contents: any }) {
+    const models = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite'];
+    let lastError: any = null;
+    for (const model of models) {
+      try {
+        console.log(`[PemeriksaanDokterService] Trying Gemini model: ${model}...`);
+        const response = await this.ai.models.generateContent({
+          model,
+          contents: options.contents,
+        });
+        console.log(`[PemeriksaanDokterService] Success with Gemini model: ${model}`);
+        return response;
+      } catch (err: any) {
+        lastError = err;
+        console.error(`[PemeriksaanDokterService] Failed with Gemini model ${model}:`, err.message || err);
+      }
+    }
+    throw lastError || new Error('All Gemini models failed to generate content.');
+  }
+
   async analisisDiagnosaAI(id_kunjungan: string, anamnesis_subjektif: string) {
     const asesmenPerawat = await this.prisma.asesmen_keperawatan.findFirst({
       where: { id_kunjungan },
@@ -50,8 +70,7 @@ export class PemeriksaanDokterService {
     `;
 
     try {
-      const response = await this.ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+      const response = await this.generateContentWithFallback({
         contents: promptMedis,
       });
 
@@ -73,6 +92,17 @@ export class PemeriksaanDokterService {
   }
 
   async create(createDto: any) {
+    const existing = await this.prisma.pemeriksaan_dokter.findFirst({
+      where: { id_kunjungan: createDto.id_kunjungan },
+    });
+
+    if (existing) {
+      return this.prisma.pemeriksaan_dokter.update({
+        where: { id_pemeriksaan: existing.id_pemeriksaan },
+        data: createDto,
+      });
+    }
+
     return this.prisma.pemeriksaan_dokter.create({
       data: createDto,
     });
@@ -83,7 +113,22 @@ export class PemeriksaanDokterService {
       include: {
         kunjungan: {
           include: {
-            pasien: true
+            pasien: true,
+            tagihan: true,
+            cara_bayar: true,
+            resep: {
+              include: {
+                resep_item: {
+                  include: {
+                    master_obat: {
+                      include: {
+                        zat_aktif: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
